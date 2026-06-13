@@ -1,5 +1,5 @@
 {
-  "timestamp": 1781387945.986113,
+  "timestamp": 1781388565.755898,
   "hook_name": "postToolUse",
   "parse_error": null,
   "context_keys": [
@@ -20,7 +20,7 @@
     "user_email",
     "workspace_roots"
   ],
-  "file_path": "/Users/matthew/agent-dashboard/web/src/components/Charts.jsx",
+  "file_path": "/Users/matthew/agent-dashboard/web/src/App.jsx",
   "tool_name": "Write",
   "edits_count": 1,
   "edit_keys": [
@@ -32,7 +32,7 @@
   "has_old_string": false,
   "has_new_string": true,
   "old_string_len": 0,
-  "new_string_len": 20728,
-  "lines_added": 629,
+  "new_string_len": 21373,
+  "lines_added": 569,
   "lines_removed": null
 }

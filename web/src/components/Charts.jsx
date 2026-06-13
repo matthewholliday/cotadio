@@ -301,6 +301,12 @@ export function SecurityGauge({ rate, blocked, allowed }) {
   );
 }
 
+function formatTrendWindowLabel(windowMinutes = 0.5) {
+  const value = Number(windowMinutes);
+  if (!Number.isFinite(value) || value <= 0) return 'last 0.5 min';
+  return `last ${value} min`;
+}
+
 function TrendArrow({ direction, positive = 'up', dense = false }) {
   const size = dense ? 'text-xl' : 'text-4xl';
   if (direction === 'flat') {
@@ -338,14 +344,14 @@ function TrendStat({ value, unit, direction, positive = 'up', footer }) {
   );
 }
 
-export function ShellOutcomeGauge({ success, failure, rate, direction }) {
+export function ShellOutcomeGauge({ success, failure, rate, direction, windowMinutes = 0.5 }) {
   if (success + failure === 0) {
     return <NoData />;
   }
   return (
     <TrendStat
       value={`${rate}%`}
-      unit="success rate (1h)"
+      unit={`success rate (${formatTrendWindowLabel(windowMinutes)})`}
       direction={direction}
       positive="up"
       footer={
@@ -358,14 +364,14 @@ export function ShellOutcomeGauge({ success, failure, rate, direction }) {
   );
 }
 
-export function ThinkTimeGauge({ avgSec, count, direction }) {
+export function ThinkTimeGauge({ avgSec, count, direction, windowMinutes = 0.5 }) {
   if (count === 0) {
     return <NoData />;
   }
   return (
     <TrendStat
       value={avgSec}
-      unit="avg seconds (1h)"
+      unit={`avg seconds (${formatTrendWindowLabel(windowMinutes)})`}
       direction={direction}
       positive="down"
       footer={<span className="text-slate-400">● {count} reasoning cycles</span>}
@@ -373,14 +379,14 @@ export function ThinkTimeGauge({ avgSec, count, direction }) {
   );
 }
 
-export function CodeChurnGauge({ added, removed, net, direction, total }) {
+export function CodeChurnGauge({ added, removed, net, direction, total, windowMinutes = 0.5 }) {
   if ((total ?? added + removed) === 0) {
     return <NoData />;
   }
   return (
     <TrendStat
       value={net >= 0 ? `+${net}` : net}
-      unit="net lines (1h)"
+      unit={`net lines (${formatTrendWindowLabel(windowMinutes)})`}
       direction={direction}
       positive="up"
       footer={

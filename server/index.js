@@ -4,7 +4,7 @@ import { createServer } from 'http';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { WebSocketServer } from 'ws';
-import { computeMetrics } from './metrics.js';
+import { computeMetrics, DEFAULT_TREND_WINDOW_MIN } from './metrics.js';
 import { clearAll, clearProject, ingestEvent, listProjects } from './store.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -26,7 +26,12 @@ function broadcastToProject(projectId, type, data) {
 }
 
 function pushMetrics(projectId) {
-  broadcastToProject(projectId, 'metrics', computeMetrics(projectId));
+  for (const client of clients) {
+    if (client.readyState === 1 && client._projectId === projectId) {
+      const data = computeMetrics(projectId, { trendWindowMin: client._trendWindowMin });
+      client.send(JSON.stringify({ type: 'metrics', data }));
+    }
+  }
 }
 
 function createApp() {
@@ -44,7 +49,8 @@ function createApp() {
 
   app.get('/api/metrics', (req, res) => {
     const projectId = req.query.project ?? 'default';
-    res.json(computeMetrics(projectId));
+    const trendWindowMin = req.query.trendWindowMin ?? DEFAULT_TREND_WINDOW_MIN;
+    res.json(computeMetrics(projectId, { trendWindowMin }));
   });
 
   app.post('/api/v1/telemetry', (req, res) => {
@@ -105,8 +111,27 @@ export function startServer(options = {}) {
     const url = new URL(req.url ?? '/ws', 'ws://localhost');
     const projectId = url.searchParams.get('project') ?? 'default';
     ws._projectId = projectId;
+    ws._trendWindowMin = DEFAULT_TREND_WINDOW_MIN;
     clients.add(ws);
-    ws.send(JSON.stringify({ type: 'metrics', data: computeMetrics(projectId) }));
+    ws.send(JSON.stringify({
+      type: 'metrics',
+      data: computeMetrics(projectId, { trendWindowMin: ws._trendWindowMin }),
+    }));
+
+    ws.on('message', (raw) => {
+      try {
+        const msg = JSON.parse(String(raw));
+        if (msg.type === 'config' && msg.trendWindowMin != null) {
+          ws._trendWindowMin = msg.trendWindowMin;
+          ws.send(JSON.stringify({
+            type: 'metrics',
+            data: computeMetrics(projectId, { trendWindowMin: ws._trendWindowMin }),
+          }));
+        }
+      } catch {
+        // Ignore malformed client messages
+      }
+    });
 
     ws.on('close', () => clients.delete(ws));
   });

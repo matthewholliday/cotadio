@@ -14,11 +14,14 @@ const STATE_LABELS = {
   afterMCPExecution: 'MCP Tool Calls',
 };
 
-export function computeMetrics(projectId = 'default') {
+export const DEFAULT_TREND_WINDOW_MIN = 0.5;
+
+export function computeMetrics(projectId = 'default', options = {}) {
   const events = getEvents(projectId);
   const now = Date.now() / 1000;
   const windowSec = 3600;
   const recent = events.filter((e) => e.timestamp >= now - windowSec);
+  const trendWindowMin = normalizeTrendWindowMin(options.trendWindowMin);
 
   const thinkTimeSeries = computeThinkTimeSeries(recent);
   const shellOutcomeSeries = computeShellOutcomes(recent);
@@ -28,14 +31,14 @@ export function computeMetrics(projectId = 'default') {
     agentStateDistribution: computeAgentState(recent),
     securityBlockRate: computeSecurityBlockRate(recent),
     thinkTimeSeries,
-    thinkTimeSummary: computeThinkTimeSummary(thinkTimeSeries),
+    thinkTimeSummary: computeThinkTimeSummary(recent, now, trendWindowMin),
     shellOutcomeSeries,
-    shellOutcomeSummary: computeShellOutcomeSummary(shellOutcomeSeries),
+    shellOutcomeSummary: computeShellOutcomeSummary(recent, now, trendWindowMin),
     blastRadius: computeBlastRadius(recent),
     mcpUsage: computeMcpUsage(recent),
     securityAlerts: getAlerts(projectId).slice(0, 20),
     codeChurnSeries,
-    codeChurnSummary: computeCodeChurnSummary(codeChurnSeries),
+    codeChurnSummary: computeCodeChurnSummary(recent, now, trendWindowMin),
     sessionScatter: computeSessionScatter(events),
     humanInterventions: computeHumanInterventions(recent),
     totals: {
@@ -315,7 +318,7 @@ function computeMcpUsage(events) {
     .slice(0, 10);
 }
 
-function computeCodeChurn(events) {
+function dedupeChurnEvents(events) {
   const churnEvents = events.filter(isChurnEvent);
   const bestByKey = new Map();
 
@@ -329,7 +332,11 @@ function computeCodeChurn(events) {
     }
   }
 
-  const deduped = [...bestByKey.values()].map(({ event }) => event);
+  return [...bestByKey.values()].map(({ event }) => event);
+}
+
+function computeCodeChurn(events) {
+  const deduped = dedupeChurnEvents(events);
   const buckets = bucketByMinute(deduped);
   return buckets.map(({ time, items }) => {
     let added = 0;
@@ -378,78 +385,121 @@ function computeHumanInterventions(events) {
   };
 }
 
-function computeTrend(series, valueFn) {
-  if (series.length < 2) {
+function normalizeTrendWindowMin(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return DEFAULT_TREND_WINDOW_MIN;
+  }
+  return Math.min(parsed, 60);
+}
+
+function eventsInWindow(events, now, windowMin, offsetMin = 0) {
+  const windowSec = windowMin * 60;
+  const end = now - offsetMin * 60;
+  const start = end - windowSec;
+  return events.filter((e) => e.timestamp >= start && e.timestamp < end);
+}
+
+function computeTrendDelta(recentValue, priorValue) {
+  if (recentValue == null || Number.isNaN(recentValue)) {
     return { direction: 'flat', pct: 0 };
   }
-
-  const half = Math.max(1, Math.floor(series.length / 2));
-  const recent = series.slice(-half);
-  const prior = series.slice(-half * 2, -half);
-
-  const avg = (items) => {
-    const values = items.map(valueFn).filter((v) => v != null && !Number.isNaN(v));
-    return values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
-  };
-
-  const recentAvg = avg(recent);
-  const priorAvg = prior.length ? avg(prior) : null;
-
-  if (recentAvg == null) return { direction: 'flat', pct: 0 };
-  if (priorAvg == null || priorAvg === 0) {
-    return { direction: recentAvg > 0 ? 'up' : 'flat', pct: 0 };
+  if (priorValue == null || priorValue === 0) {
+    return { direction: recentValue > 0 ? 'up' : 'flat', pct: 0 };
   }
 
-  const pct = Math.round(((recentAvg - priorAvg) / Math.abs(priorAvg)) * 1000) / 10;
+  const pct = Math.round(((recentValue - priorValue) / Math.abs(priorValue)) * 1000) / 10;
   const direction = pct > 5 ? 'up' : pct < -5 ? 'down' : 'flat';
   return { direction, pct };
 }
 
-function computeShellOutcomeSummary(series) {
+function shellOutcomeCounts(events) {
   let success = 0;
   let failure = 0;
-  for (const bucket of series) {
-    success += bucket.success;
-    failure += bucket.failure;
+  for (const e of events) {
+    const code = e.context_details?.exit_code ?? e.context_details?.exitCode ?? 0;
+    if (code === 0) success++;
+    else failure++;
   }
-
-  const total = success + failure;
-  const rate = total ? Math.round((success / total) * 1000) / 10 : 0;
-  const trend = computeTrend(series, (d) => {
-    const bucketTotal = d.success + d.failure;
-    return bucketTotal ? (d.success / bucketTotal) * 100 : null;
-  });
-
-  return { success, failure, rate, ...trend };
+  return { success, failure };
 }
 
-function computeThinkTimeSummary(series) {
-  const withData = series.filter((d) => d.count > 0);
-  const avgSec = withData.length
-    ? Math.round((withData.reduce((s, d) => s + d.avgThinkSec, 0) / withData.length) * 100) / 100
-    : 0;
-  const trend = computeTrend(withData, (d) => d.avgThinkSec);
+function shellSuccessRate(counts) {
+  const total = counts.success + counts.failure;
+  return total ? (counts.success / total) * 100 : null;
+}
+
+function computeShellOutcomeSummary(events, now, windowMin) {
+  const shellEvents = events.filter((e) => e.hook_event === 'afterShellExecution');
+  const recentEvents = eventsInWindow(shellEvents, now, windowMin);
+  const priorEvents = eventsInWindow(shellEvents, now, windowMin, windowMin);
+
+  const recentCounts = shellOutcomeCounts(recentEvents);
+  const priorCounts = shellOutcomeCounts(priorEvents);
+  const total = recentCounts.success + recentCounts.failure;
+  const rate = total ? Math.round(shellSuccessRate(recentCounts) * 10) / 10 : 0;
+  const trend = computeTrendDelta(
+    shellSuccessRate(recentCounts),
+    shellSuccessRate(priorCounts),
+  );
+
+  return { success: recentCounts.success, failure: recentCounts.failure, rate, windowMinutes: windowMin, ...trend };
+}
+
+function computeThinkTimeSummary(events, now, windowMin) {
+  const thinkEvents = events.filter((e) => e.hook_event === 'afterAgentThought');
+  const recentEvents = eventsInWindow(thinkEvents, now, windowMin);
+  const priorEvents = eventsInWindow(thinkEvents, now, windowMin, windowMin);
+
+  const recentDurations = recentEvents
+    .map((e) => extractDurationMs(e))
+    .filter((d) => d != null && d > 0);
+  const priorDurations = priorEvents
+    .map((e) => extractDurationMs(e))
+    .filter((d) => d != null && d > 0);
+
+  const recentAvgSec = recentDurations.length
+    ? recentDurations.reduce((a, b) => a + b, 0) / recentDurations.length / 1000
+    : null;
+  const priorAvgSec = priorDurations.length
+    ? priorDurations.reduce((a, b) => a + b, 0) / priorDurations.length / 1000
+    : null;
+
+  const avgSec = recentAvgSec == null ? 0 : Math.round(recentAvgSec * 100) / 100;
+  const trend = computeTrendDelta(recentAvgSec, priorAvgSec);
 
   return {
     avgSec,
-    count: withData.reduce((s, d) => s + d.count, 0),
+    count: recentDurations.length,
+    windowMinutes: windowMin,
     ...trend,
   };
 }
 
-function computeCodeChurnSummary(series) {
+function churnTotals(events) {
   let added = 0;
   let removed = 0;
-  for (const bucket of series) {
-    added += bucket.added;
-    removed += bucket.removed;
+  for (const e of events) {
+    const deltas = extractEventLineDeltas(e);
+    added += deltas.added;
+    removed += deltas.removed;
   }
+  return { added, removed, net: added - removed, total: added + removed };
+}
 
-  const net = added - removed;
-  const total = added + removed;
-  const trend = computeTrend(series, (d) => d.added + d.removed);
+function computeCodeChurnSummary(events, now, windowMin) {
+  const deduped = dedupeChurnEvents(events);
+  const recentEvents = eventsInWindow(deduped, now, windowMin);
+  const priorEvents = eventsInWindow(deduped, now, windowMin, windowMin);
 
-  return { added, removed, net, total, ...trend };
+  const recent = churnTotals(recentEvents);
+  const prior = churnTotals(priorEvents);
+  const trend = computeTrendDelta(
+    recent.total > 0 ? recent.total : null,
+    prior.total > 0 ? prior.total : null,
+  );
+
+  return { ...recent, windowMinutes: windowMin, ...trend };
 }
 
 function bucketByMinute(events) {

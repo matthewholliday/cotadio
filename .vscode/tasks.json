@@ -29,6 +29,20 @@
         "kind": "build",
         "isDefault": true
       }
+    },
+    {
+      "label": "Simulate live telemetry",
+      "type": "shell",
+      "command": "npm run simulate",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": false
+      },
+      "problemMatcher": []
     }
   ]
 }

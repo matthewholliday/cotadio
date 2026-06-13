@@ -1,22 +1,28 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const EMPTY_METRICS = {
   agentStateDistribution: [],
   securityBlockRate: { blocked: 0, allowed: 0, rate: 0 },
   thinkTimeSeries: [],
-  thinkTimeSummary: { avgSec: 0, count: 0, direction: 'flat', pct: 0 },
+  thinkTimeSummary: { avgSec: 0, count: 0, direction: 'flat', pct: 0, windowMinutes: 0.5 },
   shellOutcomeSeries: [],
-  shellOutcomeSummary: { success: 0, failure: 0, rate: 0, direction: 'flat', pct: 0 },
+  shellOutcomeSummary: { success: 0, failure: 0, rate: 0, direction: 'flat', pct: 0, windowMinutes: 0.5 },
   blastRadius: [],
   mcpUsage: [],
   securityAlerts: [],
   codeChurnSeries: [],
-  codeChurnSummary: { added: 0, removed: 0, net: 0, total: 0, direction: 'flat', pct: 0 },
+  codeChurnSummary: { added: 0, removed: 0, net: 0, total: 0, direction: 'flat', pct: 0, windowMinutes: 0.5 },
   sessionScatter: [],
   humanInterventions: { total: 0, sparkline: [], recent: [] },
   totals: { events: 0, recentEvents: 0, sessions: 0 },
   updatedAt: Date.now() / 1000,
 };
+
+function sendTrendConfig(socket, trendWindowMin) {
+  if (socket?.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify({ type: 'config', trendWindowMin }));
+  }
+}
 
 function getWebSocketUrl(projectId) {
   const qs = `?project=${encodeURIComponent(projectId)}`;
@@ -24,14 +30,19 @@ function getWebSocketUrl(projectId) {
   return `${protocol}//${window.location.host}/ws${qs}`;
 }
 
-export function useMetrics(projectId) {
+export function useMetrics(projectId, trendWindowMin = 0.5) {
   const [metrics, setMetrics] = useState(EMPTY_METRICS);
   const [connected, setConnected] = useState(false);
+  const wsRef = useRef(null);
+  const trendWindowRef = useRef(trendWindowMin);
+
+  trendWindowRef.current = trendWindowMin;
 
   useEffect(() => {
     if (projectId === null) {
       setMetrics(EMPTY_METRICS);
       setConnected(false);
+      wsRef.current = null;
       return undefined;
     }
 
@@ -46,11 +57,16 @@ export function useMetrics(projectId) {
 
       intentionalClose = false;
       ws = new WebSocket(getWebSocketUrl(effectiveProjectId));
+      wsRef.current = ws;
 
-      ws.onopen = () => setConnected(true);
+      ws.onopen = () => {
+        setConnected(true);
+        sendTrendConfig(ws, trendWindowRef.current);
+      };
       ws.onerror = () => setConnected(false);
       ws.onclose = () => {
         setConnected(false);
+        if (wsRef.current === ws) wsRef.current = null;
         if (!cancelled && !intentionalClose) {
           retryTimer = setTimeout(connect, 2000);
         }
@@ -79,8 +95,14 @@ export function useMetrics(projectId) {
       } else {
         ws?.close();
       }
+      if (wsRef.current === ws) wsRef.current = null;
     };
   }, [projectId]);
+
+  useEffect(() => {
+    if (projectId === null || !connected) return undefined;
+    sendTrendConfig(wsRef.current, trendWindowMin);
+  }, [projectId, connected, trendWindowMin]);
 
   return { metrics, connected };
 }
