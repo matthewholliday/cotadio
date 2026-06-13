@@ -77,7 +77,7 @@ function SortablePanel({ id, children }) {
     opacity: isDragging ? 0.6 : 1,
   };
   return (
-    <div ref={setNodeRef} style={style}>
+    <div ref={setNodeRef} style={style} className="h-full">
       {children({ dragHandleProps: { ...attributes, ...listeners } })}
     </div>
   );
@@ -190,18 +190,20 @@ export default function App() {
   const panelContent = {
     'agent-state': (dragHandleProps) => (
       <Panel title="Agent State Distribution" subtitle="Metric #1 · Donut chart" dragHandleProps={dragHandleProps}>
-        <AgentStateDonut data={metrics.agentStateDistribution} />
-        <ul className="mt-2 flex flex-wrap justify-center gap-3 text-xs text-slate-400">
-          {metrics.agentStateDistribution.map((d, i) => (
-            <li key={d.name}>
-              <span
-                className="mr-1 inline-block h-2 w-2 rounded-full"
-                style={{ background: `hsl(${240 + i * 40}, 70%, 60%)` }}
-              />
-              {d.name} {d.percent}%
-            </li>
-          ))}
-        </ul>
+        <div className="flex min-h-0 flex-1 flex-col">
+          <AgentStateDonut data={metrics.agentStateDistribution} />
+          <ul className="mt-2 flex shrink-0 flex-wrap justify-center gap-3 text-xs text-slate-400">
+            {metrics.agentStateDistribution.map((d, i) => (
+              <li key={d.name}>
+                <span
+                  className="mr-1 inline-block h-2 w-2 rounded-full"
+                  style={{ background: `hsl(${240 + i * 40}, 70%, 60%)` }}
+                />
+                {d.name} {d.percent}%
+              </li>
+            ))}
+          </ul>
+        </div>
       </Panel>
     ),
     'security-block': (dragHandleProps) => (
@@ -255,46 +257,33 @@ export default function App() {
         connected={connected}
       />
 
-      <header className="sticky top-0 z-10 border-b border-border bg-panel/90 backdrop-blur">
-        <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-3">
-          <div>
-            <p className="text-xs font-medium uppercase tracking-widest text-accent">Cursor Hooks</p>
-            <h1 className="text-xl font-bold text-white">Agent Observability Dashboard</h1>
-          </div>
-          <div className="flex items-center gap-4">
-            {!isElectron && (
-              <div className="flex items-center gap-4 text-sm">
-                <div className="hidden sm:block text-right">
-                  <p className="text-slate-400">
-                    {metrics.totals.recentEvents} events / {metrics.totals.sessions} sessions (1h)
-                  </p>
-                  <p className="text-xs text-slate-600">{metrics.totals.events} total buffered</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`h-2 w-2 rounded-full ${connected ? 'bg-success animate-pulse' : 'bg-danger'}`}
-                  />
-                  <span className="text-slate-400">{connected ? 'Live' : 'Reconnecting…'}</span>
-                </div>
+      <button
+        type="button"
+        onClick={() => setSettingsOpen(true)}
+        aria-label="Open settings"
+        className="fixed left-0 top-0 z-20 h-10 w-10 cursor-pointer opacity-0 hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+      />
+
+      {!isElectron && (
+        <header className="sticky top-0 z-10 border-b border-border bg-panel/90 backdrop-blur">
+          <div className="mx-auto flex max-w-[1600px] items-center justify-end px-4 py-2">
+            <div className="flex items-center gap-4 text-sm">
+              <div className="hidden sm:block text-right">
+                <p className="text-slate-400">
+                  {metrics.totals.recentEvents} events / {metrics.totals.sessions} sessions (1h)
+                </p>
+                <p className="text-xs text-slate-600">{metrics.totals.events} total buffered</p>
               </div>
-            )}
-            <button
-              type="button"
-              onClick={() => setSettingsOpen(true)}
-              aria-label="Open settings"
-              className="rounded-lg p-2 text-slate-500 hover:bg-white/5 hover:text-slate-300"
-            >
-              <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5" aria-hidden="true">
-                <path
-                  fillRule="evenodd"
-                  d="M7.84 1.804A1 1 0 018.82 1h2.36a1 1 0 01.98.804l.331 1.652a6.993 6.993 0 011.929 1.115l1.598-.54a1 1 0 011.186.447l1.18 2.044a1 1 0 01-.205 1.251l-1.267 1.113a7.047 7.047 0 010 2.228l1.267 1.113a1 1 0 01.206 1.25l-1.18 2.045a1 1 0 01-1.187.447l-1.598-.54a6.993 6.993 0 01-1.929 1.115l-.33 1.652a1 1 0 01-.98.804H8.82a1 1 0 01-.98-.804l-.331-1.652a6.993 6.993 0 01-1.929-1.115l-1.598.54a1 1 0 01-1.186-.447l-1.18-2.044a1 1 0 01.205-1.251l1.267-1.114a7.05 7.05 0 010-2.227L1.821 7.773a1 1 0 01-.206-1.25l1.18-2.045a1 1 0 011.187-.447l1.598.54A6.993 6.993 0 017.51 3.456l.33-1.652zM10 13a3 3 0 100-6 3 3 0 000 6z"
-                  clipRule="evenodd"
+              <div className="flex items-center gap-2">
+                <span
+                  className={`h-2 w-2 rounded-full ${connected ? 'bg-success animate-pulse' : 'bg-danger'}`}
                 />
-              </svg>
-            </button>
+                <span className="text-slate-400">{connected ? 'Live' : 'Reconnecting…'}</span>
+              </div>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
+      )}
 
       <main className="mx-auto max-w-[1600px] px-4 py-4">
         {showEmptyState ? (
@@ -320,7 +309,7 @@ export default function App() {
 
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
               <SortableContext items={panelOrder} strategy={rectSortingStrategy}>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid grid-cols-1 items-stretch gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {panelOrder.map((id) => (
                     <SortablePanel key={id} id={id}>
                       {({ dragHandleProps }) => panelContent[id]?.(dragHandleProps)}

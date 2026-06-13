@@ -22,6 +22,16 @@ import { formatTime } from '../useMetrics.js';
 
 const COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ec4899', '#06b6d4', '#a78bfa'];
 
+function ChartArea({ children, className = '' }) {
+  return (
+    <div className={`min-h-[220px] flex-1 ${className}`}>
+      <ResponsiveContainer width="100%" height="100%">
+        {children}
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
 function panelStorageKey(title) {
   return `panel-expanded:${title}`;
 }
@@ -54,9 +64,9 @@ export function Panel({ title, subtitle, children, className = '', defaultExpand
 
   return (
     <section
-      className={`group/panel rounded-xl border border-border bg-surface p-3 shadow-lg shadow-black/20 ${className}`}
+      className={`group/panel flex h-full flex-col rounded-xl border border-border bg-surface p-3 shadow-lg shadow-black/20 ${className}`}
     >
-      <header className={expanded ? 'mb-2' : ''}>
+      <header className={`shrink-0 ${expanded ? 'mb-2' : ''}`}>
         <div className="flex items-start gap-1">
           {dragHandleProps && (
             <button
@@ -105,7 +115,11 @@ export function Panel({ title, subtitle, children, className = '', defaultExpand
           </button>
         </div>
       </header>
-      <div id={contentId} hidden={!expanded}>
+      <div
+        id={contentId}
+        hidden={!expanded}
+        className={expanded ? 'flex min-h-0 flex-1 flex-col' : undefined}
+      >
         {children}
       </div>
     </section>
@@ -115,7 +129,7 @@ export function Panel({ title, subtitle, children, className = '', defaultExpand
 export function AgentStateDonut({ data }) {
   const chartData = data.length ? data : [{ name: 'Waiting', value: 1, percent: 100 }];
   return (
-    <ResponsiveContainer width="100%" height={220}>
+    <ChartArea>
       <PieChart>
         <Pie
           data={chartData}
@@ -141,7 +155,7 @@ export function AgentStateDonut({ data }) {
           formatter={(value, name, props) => [`${value} (${props.payload.percent}%)`, name]}
         />
       </PieChart>
-    </ResponsiveContainer>
+    </ChartArea>
   );
 }
 
@@ -149,7 +163,7 @@ export function SecurityGauge({ rate, blocked, allowed }) {
   const clamped = Math.min(rate, 100);
   const hue = clamped < 5 ? 142 : clamped < 15 ? 45 : 0;
   return (
-    <div className="flex flex-col items-center py-4">
+    <div className="flex min-h-[220px] flex-1 flex-col items-center justify-center py-4">
       <div
         className="relative flex h-36 w-36 items-end justify-center rounded-full border-8 border-border"
         style={{
@@ -172,7 +186,7 @@ export function SecurityGauge({ rate, blocked, allowed }) {
 export function ThinkTimeLine({ data }) {
   const chartData = data.map((d) => ({ ...d, label: formatTime(d.time) }));
   return (
-    <ResponsiveContainer width="100%" height={220}>
+    <ChartArea>
       <LineChart data={chartData}>
         <CartesianGrid stroke="#2a2f3d" strokeDasharray="3 3" />
         <XAxis dataKey="label" tick={{ fill: '#94a3b8', fontSize: 10 }} />
@@ -182,14 +196,14 @@ export function ThinkTimeLine({ data }) {
         />
         <Line type="monotone" dataKey="avgThinkSec" stroke="#6366f1" strokeWidth={2} dot={false} />
       </LineChart>
-    </ResponsiveContainer>
+    </ChartArea>
   );
 }
 
 export function ShellOutcomeArea({ data }) {
   const chartData = data.map((d) => ({ ...d, label: formatTime(d.time) }));
   return (
-    <ResponsiveContainer width="100%" height={220}>
+    <ChartArea>
       <AreaChart data={chartData}>
         <CartesianGrid stroke="#2a2f3d" strokeDasharray="3 3" />
         <XAxis dataKey="label" tick={{ fill: '#94a3b8', fontSize: 10 }} />
@@ -200,33 +214,39 @@ export function ShellOutcomeArea({ data }) {
         <Area type="monotone" dataKey="success" stackId="1" stroke="#22c55e" fill="#22c55e55" />
         <Area type="monotone" dataKey="failure" stackId="1" stroke="#ef4444" fill="#ef444455" />
       </AreaChart>
-    </ResponsiveContainer>
+    </ChartArea>
   );
 }
 
 export function BlastRadiusTreemap({ data }) {
   if (!data.length) {
-    return <p className="py-8 text-center text-sm text-slate-500">No file edits yet</p>;
+    return (
+      <div className="flex min-h-[220px] flex-1 items-center justify-center">
+        <p className="text-sm text-slate-500">No file edits yet</p>
+      </div>
+    );
   }
   const max = Math.max(...data.map((d) => d.value));
   return (
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-      {data.map((item) => {
-        const intensity = 0.25 + (item.value / max) * 0.75;
-        return (
-          <div
-            key={item.name}
-            className="rounded-lg border border-border p-3 transition hover:border-accent/50"
-            style={{ background: `rgba(99, 102, 241, ${intensity * 0.35})` }}
-          >
-            <p className="truncate font-mono text-xs text-slate-300" title={item.name}>
-              {item.name}
-            </p>
-            <p className="mt-1 text-lg font-semibold tabular-nums">{item.value}</p>
-            <p className="text-[10px] text-slate-500">edits</p>
-          </div>
-        );
-      })}
+    <div className="min-h-[220px] flex-1 overflow-y-auto">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        {data.map((item) => {
+          const intensity = 0.25 + (item.value / max) * 0.75;
+          return (
+            <div
+              key={item.name}
+              className="rounded-lg border border-border p-3 transition hover:border-accent/50"
+              style={{ background: `rgba(99, 102, 241, ${intensity * 0.35})` }}
+            >
+              <p className="truncate font-mono text-xs text-slate-300" title={item.name}>
+                {item.name}
+              </p>
+              <p className="mt-1 text-lg font-semibold tabular-nums">{item.value}</p>
+              <p className="text-[10px] text-slate-500">edits</p>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -234,7 +254,7 @@ export function BlastRadiusTreemap({ data }) {
 export function McpBarChart({ data }) {
   const chartData = data.length ? data : [{ name: 'none', count: 0 }];
   return (
-    <ResponsiveContainer width="100%" height={220}>
+    <ChartArea>
       <BarChart data={chartData} layout="vertical" margin={{ left: 20 }}>
         <CartesianGrid stroke="#2a2f3d" strokeDasharray="3 3" horizontal={false} />
         <XAxis type="number" tick={{ fill: '#94a3b8', fontSize: 10 }} allowDecimals={false} />
@@ -249,7 +269,7 @@ export function McpBarChart({ data }) {
         />
         <Bar dataKey="count" fill="#06b6d4" radius={[0, 4, 4, 0]} />
       </BarChart>
-    </ResponsiveContainer>
+    </ChartArea>
   );
 }
 
@@ -285,7 +305,7 @@ export function AlertTicker({ alerts }) {
 export function CodeChurnLine({ data }) {
   const chartData = data.map((d) => ({ ...d, label: formatTime(d.time) }));
   return (
-    <ResponsiveContainer width="100%" height={220}>
+    <ChartArea>
       <LineChart data={chartData}>
         <CartesianGrid stroke="#2a2f3d" strokeDasharray="3 3" />
         <XAxis dataKey="label" tick={{ fill: '#94a3b8', fontSize: 10 }} />
@@ -297,14 +317,14 @@ export function CodeChurnLine({ data }) {
         <Line type="monotone" dataKey="removed" stroke="#ef4444" strokeWidth={2} dot={false} name="Removed" />
         <Line type="monotone" dataKey="net" stroke="#6366f1" strokeWidth={2} strokeDasharray="4 4" dot={false} name="Net" />
       </LineChart>
-    </ResponsiveContainer>
+    </ChartArea>
   );
 }
 
 export function SessionScatter({ data }) {
   const chartData = data.length ? data : [{ durationMin: 0, model: 'none', timestamp: Date.now() / 1000 }];
   return (
-    <ResponsiveContainer width="100%" height={220}>
+    <ChartArea>
       <ScatterChart>
         <CartesianGrid stroke="#2a2f3d" strokeDasharray="3 3" />
         <XAxis
@@ -328,25 +348,27 @@ export function SessionScatter({ data }) {
         />
         <Scatter data={chartData} fill="#a78bfa" />
       </ScatterChart>
-    </ResponsiveContainer>
+    </ChartArea>
   );
 }
 
 export function HumanInterventions({ data }) {
   const spark = data.sparkline.map((d) => ({ ...d, label: formatTime(d.time) }));
   return (
-    <div>
-      <div className="mb-3 flex items-baseline gap-2">
+    <div className="flex min-h-[220px] flex-1 flex-col">
+      <div className="mb-3 flex shrink-0 items-baseline gap-2">
         <span className="text-4xl font-bold tabular-nums text-warn">{data.total}</span>
         <span className="text-sm text-slate-500">manual approvals (1h)</span>
       </div>
-      <ResponsiveContainer width="100%" height={80}>
-        <BarChart data={spark}>
-          <Bar dataKey="count" fill="#f59e0b" radius={[2, 2, 0, 0]} />
-        </BarChart>
-      </ResponsiveContainer>
+      <div className="min-h-0 flex-1">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={spark}>
+            <Bar dataKey="count" fill="#f59e0b" radius={[2, 2, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
       {data.recent.length > 0 && (
-        <ul className="mt-2 space-y-1 text-xs text-slate-400">
+        <ul className="mt-2 max-h-16 shrink-0 space-y-1 overflow-hidden text-xs text-slate-400">
           {data.recent.map((r, i) => (
             <li key={i} className="truncate">
               {formatTime(r.time)} · {r.message}
