@@ -1,24 +1,28 @@
-import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { createLogger, defineConfig } from 'vite';
 
-function ignoreBenignProxyErrors(proxy) {
-  proxy.on('error', (err, _req, res) => {
-    if (err.code === 'EPIPE' || err.code === 'ECONNRESET') return;
-    console.error('[vite] ws proxy error:', err);
-    if (res && !res.headersSent) {
-      res.writeHead(502);
-      res.end();
-    }
-  });
-  proxy.on('proxyReqWs', (_proxyReq, _req, socket) => {
-    socket.on('error', (err) => {
-      if (err.code === 'EPIPE' || err.code === 'ECONNRESET') return;
-      console.error('[vite] ws proxy socket error:', err);
-    });
-  });
+function isBenignSocketError(err) {
+  if (!err) return false;
+  return (
+    err.code === 'EPIPE' ||
+    err.code === 'ECONNRESET' ||
+    err.message?.includes('EPIPE') ||
+    err.message?.includes('ECONNRESET')
+  );
 }
 
+// Vite logs ws proxy EPIPE/ECONNRESET errors from its own internal proxyReqWs
+// handler which runs after our configure callback and can't be patched from
+// within configure. Suppress them at the logger level instead.
+const logger = createLogger();
+const originalLoggerError = logger.error.bind(logger);
+logger.error = (msg, opts) => {
+  if (isBenignSocketError(opts?.error)) return;
+  originalLoggerError(msg, opts);
+};
+
 export default defineConfig({
+  customLogger: logger,
   plugins: [react()],
   server: {
     port: 5173,
@@ -27,7 +31,6 @@ export default defineConfig({
       '/ws': {
         target: 'ws://localhost:3847',
         ws: true,
-        configure: ignoreBenignProxyErrors,
       },
     },
   },

@@ -2,15 +2,15 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Electron: Dev",
+      "label": "Dev",
       "type": "shell",
-      "command": "${workspaceFolder}/scripts/electron.sh dev",
+      "command": "npm run dev",
       "options": {
         "cwd": "${workspaceFolder}"
       },
       "isBackground": true,
       "problemMatcher": {
-        "owner": "electron",
+        "owner": "dev",
         "pattern": {
           "regexp": "^$"
         },
@@ -23,42 +23,6 @@
       "presentation": {
         "reveal": "always",
         "panel": "dedicated",
-        "focus": true
-      },
-      "group": {
-        "kind": "test",
-        "isDefault": false
-      }
-    },
-    {
-      "label": "Electron: Build",
-      "type": "shell",
-      "command": "${workspaceFolder}/scripts/electron.sh build",
-      "options": {
-        "cwd": "${workspaceFolder}"
-      },
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared",
-        "focus": true
-      },
-      "group": {
-        "kind": "build",
-        "isDefault": false
-      }
-    },
-    {
-      "label": "Electron: Run",
-      "type": "shell",
-      "command": "${workspaceFolder}/scripts/electron.sh run",
-      "options": {
-        "cwd": "${workspaceFolder}"
-      },
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared",
         "focus": true
       },
       "group": {
