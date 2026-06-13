@@ -20,7 +20,7 @@ import {
   BlastRadiusTreemap,
   CodeChurnGauge,
   CodeChurnLine,
-  Commentary,
+  Events,
   HumanInterventions,
   McpBarChart,
   Panel,
@@ -55,17 +55,7 @@ const DEFAULT_PANEL_ORDER = [
 const PANEL_ORDER_KEY = 'panel-order';
 const HIGH_DENSITY_KEY = 'high-density';
 const TREND_WINDOW_KEY = 'trend-window-minutes';
-const COMMENTARY_INTERVAL_KEY = 'commentary-interval-sec';
-const COMMENTARY_TICKER_KEY = 'commentary-ticker-tape';
-const COMMENTARY_TICKER_SPEED_KEY = 'commentary-ticker-speed';
 const DEFAULT_TREND_WINDOW_MIN = 0.5;
-const DEFAULT_COMMENTARY_INTERVAL_SEC = 120;
-
-const TICKER_SPEED_OPTIONS = [
-  { id: 'slow', label: 'Slow' },
-  { id: 'medium', label: 'Medium' },
-  { id: 'fast', label: 'Fast' },
-];
 
 const METRIC_TOOLTIPS = {
   'agent-state':
@@ -92,8 +82,8 @@ const METRIC_TOOLTIPS = {
     'Which directories saw the most file edits from afterFileEdit, grouped by path. Surfaces anomalies such as a UI task suddenly touching database migrations.',
   'mcp-usage':
     'Frequency of each MCP server or tool invoked via afterMCPExecution. Shows whether the agent relies on GitHub, Slack, Figma, or other external integrations.',
-  'commentary':
-    'AI-generated summary of recent agent telemetry, refreshed on a configurable interval (default 120 seconds). Uses the Anthropic API to describe thinking, edits, shell commands, MCP calls, and session activity from hook events.',
+  events:
+    'Scrolling feed of recent hook events from the last hour. Each event type uses a distinct color and symbol: thinking, file edits, shell commands, MCP calls, tool use, and session lifecycle.',
 };
 
 function readHighDensity() {
@@ -133,60 +123,6 @@ function saveTrendWindowMin(value) {
   }
 }
 
-function readCommentaryIntervalSec() {
-  try {
-    const stored = localStorage.getItem(COMMENTARY_INTERVAL_KEY);
-    if (stored != null) {
-      const parsed = Number(stored);
-      if (Number.isFinite(parsed) && parsed >= 30) return Math.min(Math.round(parsed), 600);
-    }
-  } catch {
-    // Ignore storage errors
-  }
-  return DEFAULT_COMMENTARY_INTERVAL_SEC;
-}
-
-function saveCommentaryIntervalSec(value) {
-  try {
-    localStorage.setItem(COMMENTARY_INTERVAL_KEY, String(value));
-  } catch {
-    // Ignore storage errors
-  }
-}
-
-function readTickerTape() {
-  try {
-    return localStorage.getItem(COMMENTARY_TICKER_KEY) === 'true';
-  } catch {
-    return false;
-  }
-}
-
-function saveTickerTape(value) {
-  try {
-    localStorage.setItem(COMMENTARY_TICKER_KEY, String(value));
-  } catch {
-    // Ignore storage errors
-  }
-}
-
-function readTickerSpeed() {
-  try {
-    const stored = localStorage.getItem(COMMENTARY_TICKER_SPEED_KEY);
-    if (stored === 'slow' || stored === 'medium' || stored === 'fast') return stored;
-  } catch {
-    // Ignore storage errors
-  }
-  return 'medium';
-}
-
-function saveTickerSpeed(value) {
-  try {
-    localStorage.setItem(COMMENTARY_TICKER_SPEED_KEY, value);
-  } catch {
-    // Ignore storage errors
-  }
-}
 
 function migratePanelOrder(stored) {
   if (!Array.isArray(stored)) return DEFAULT_PANEL_ORDER;
@@ -293,12 +229,6 @@ function SettingsModal({
   onHighDensityChange,
   trendWindowMin,
   onTrendWindowMinChange,
-  commentaryIntervalSec,
-  onCommentaryIntervalSecChange,
-  tickerTape,
-  onTickerTapeChange,
-  tickerSpeed,
-  onTickerSpeedChange,
 }) {
   useEffect(() => {
     const handleKey = (e) => { if (e.key === 'Escape') onClose(); };
@@ -366,58 +296,6 @@ function SettingsModal({
           </div>
 
           <div className="rounded-lg border border-border p-4">
-            <h3 className="mb-1 text-sm font-medium text-slate-200">Commentary</h3>
-            <p className="mb-3 text-xs text-slate-500">
-              How often the dashboard requests a new AI summary of recent agent activity, and how
-              far back each summary looks.
-            </p>
-            <label className="flex items-center gap-2 text-sm text-slate-300">
-              <span className="shrink-0">Every</span>
-              <input
-                type="number"
-                min="30"
-                max="600"
-                step="1"
-                value={commentaryIntervalSec}
-                onChange={(e) => {
-                  const parsed = Number(e.target.value);
-                  if (Number.isFinite(parsed) && parsed >= 30) {
-                    onCommentaryIntervalSecChange(Math.min(Math.round(parsed), 600));
-                  }
-                }}
-                className="w-24 rounded-md border border-border bg-panel px-2 py-1 text-sm text-slate-100 focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/30"
-              />
-              <span className="text-slate-500">seconds</span>
-            </label>
-            <div className="mt-4 space-y-3 border-t border-border pt-4">
-              <label className="flex cursor-pointer select-none items-center gap-2 text-sm text-slate-300">
-                <input
-                  type="checkbox"
-                  checked={tickerTape}
-                  onChange={(e) => onTickerTapeChange(e.target.checked)}
-                  className="h-3.5 w-3.5 rounded border-border bg-panel text-accent focus:ring-accent/50"
-                />
-                Ticker tape
-              </label>
-              <label className="flex items-center gap-2 text-sm text-slate-300">
-                <span className="shrink-0 text-slate-400">Speed</span>
-                <select
-                  value={tickerSpeed}
-                  disabled={!tickerTape}
-                  onChange={(e) => onTickerSpeedChange(e.target.value)}
-                  className="rounded-md border border-border bg-panel px-2 py-1 text-sm text-slate-100 disabled:cursor-not-allowed disabled:opacity-40 focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/30"
-                >
-                  {TICKER_SPEED_OPTIONS.map(({ id, label }) => (
-                    <option key={id} value={id}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-          </div>
-
-          <div className="rounded-lg border border-border p-4">
             <h3 className="mb-1 text-sm font-medium text-slate-200">Layout</h3>
             <p className="mb-3 text-xs text-slate-500">
               Resets the panel order to the original default arrangement.
@@ -444,13 +322,10 @@ export default function App() {
   const [expandedPanelId, setExpandedPanelId] = useState(null);
   const [highDensity, setHighDensity] = useState(readHighDensity);
   const [trendWindowMin, setTrendWindowMin] = useState(readTrendWindowMin);
-  const [commentaryIntervalSec, setCommentaryIntervalSec] = useState(readCommentaryIntervalSec);
-  const [tickerTape, setTickerTape] = useState(readTickerTape);
-  const [tickerSpeed, setTickerSpeed] = useState(readTickerSpeed);
 
   const isElectron = typeof window.dashboard !== 'undefined';
   const projectId = isElectron ? (project?.id ?? null) : 'default';
-  const { metrics, connected } = useMetrics(projectId, trendWindowMin, commentaryIntervalSec);
+  const { metrics, connected } = useMetrics(projectId, trendWindowMin);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -505,21 +380,6 @@ export default function App() {
     saveTrendWindowMin(value);
   }, []);
 
-  const handleCommentaryIntervalSecChange = useCallback((value) => {
-    setCommentaryIntervalSec(value);
-    saveCommentaryIntervalSec(value);
-  }, []);
-
-  const handleTickerTapeChange = useCallback((value) => {
-    setTickerTape(value);
-    saveTickerTape(value);
-  }, []);
-
-  const handleTickerSpeedChange = useCallback((value) => {
-    setTickerSpeed(value);
-    saveTickerSpeed(value);
-  }, []);
-
   const handleExpandPanel = useCallback((id) => {
     setExpandedPanelId(id);
   }, []);
@@ -531,13 +391,11 @@ export default function App() {
   const showEmptyState = isElectron && !project;
 
   const panels = {
-    commentary: {
-      title: 'Commentary',
-      subtitle: 'AI summary of recent agent activity',
-      tooltip: METRIC_TOOLTIPS.commentary,
-      render: () => (
-        <Commentary commentary={metrics.commentary} tickerTape={tickerTape} tickerSpeed={tickerSpeed} />
-      ),
+    events: {
+      title: 'Events',
+      subtitle: 'Live hook event feed',
+      tooltip: METRIC_TOOLTIPS.events,
+      render: () => <Events events={metrics.eventFeed} />,
     },
     'agent-state': {
       title: 'Agent State Distribution',
@@ -615,7 +473,7 @@ export default function App() {
 
   const panelContent = Object.fromEntries(
     Object.entries(panels)
-      .filter(([id]) => id !== 'commentary')
+      .filter(([id]) => id !== 'events')
       .map(([id, panel]) => [
         id,
         (dragHandleProps) => (
@@ -704,13 +562,13 @@ export default function App() {
         ) : (
           <>
             <Panel
-              title={panels.commentary.title}
-              subtitle={panels.commentary.subtitle}
-              tooltip={panels.commentary.tooltip}
+              title={panels.events.title}
+              subtitle={panels.events.subtitle}
+              tooltip={panels.events.tooltip}
               className={highDensity ? 'mb-1.5' : 'mb-3'}
-              onExpand={() => handleExpandPanel('commentary')}
+              onExpand={() => handleExpandPanel('events')}
             >
-              {panels.commentary.render()}
+              {panels.events.render()}
             </Panel>
 
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
@@ -755,12 +613,6 @@ export default function App() {
           onHighDensityChange={handleHighDensityChange}
           trendWindowMin={trendWindowMin}
           onTrendWindowMinChange={handleTrendWindowMinChange}
-          commentaryIntervalSec={commentaryIntervalSec}
-          onCommentaryIntervalSecChange={handleCommentaryIntervalSecChange}
-          tickerTape={tickerTape}
-          onTickerTapeChange={handleTickerTapeChange}
-          tickerSpeed={tickerSpeed}
-          onTickerSpeedChange={handleTickerSpeedChange}
         />
       )}
       </div>

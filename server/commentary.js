@@ -32,7 +32,7 @@ function formatTimestamp(unixSec) {
   return new Date(unixSec * 1000).toISOString().slice(11, 19);
 }
 
-function describeEvent(event) {
+export function describeEvent(event) {
   const ctx = event.context_details ?? {};
   const parts = [formatTimestamp(event.timestamp), event.hook_event];
 

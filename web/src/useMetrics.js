@@ -1,16 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 
-const DEFAULT_COMMENTARY_INTERVAL_SEC = 120;
-
-const EMPTY_COMMENTARY = {
-  text: null,
-  generatedAt: null,
-  eventCount: 0,
-  intervalSec: DEFAULT_COMMENTARY_INTERVAL_SEC,
-  nextCommentaryAt: null,
-  status: 'idle',
-};
-
 const EMPTY_METRICS = {
   agentStateDistribution: [],
   securityBlockRate: { blocked: 0, allowed: 0, rate: 0 },
@@ -20,7 +9,7 @@ const EMPTY_METRICS = {
   shellOutcomeSummary: { success: 0, failure: 0, rate: 0, direction: 'flat', pct: 0, windowMinutes: 0.5 },
   blastRadius: [],
   mcpUsage: [],
-  commentary: EMPTY_COMMENTARY,
+  eventFeed: [],
   codeChurnSeries: [],
   codeChurnSummary: { added: 0, removed: 0, net: 0, total: 0, direction: 'flat', pct: 0, windowMinutes: 0.5 },
   sessionScatter: [],
@@ -29,12 +18,11 @@ const EMPTY_METRICS = {
   updatedAt: Date.now() / 1000,
 };
 
-function sendClientConfig(socket, { trendWindowMin, commentaryIntervalSec }) {
+function sendClientConfig(socket, { trendWindowMin }) {
   if (socket?.readyState === WebSocket.OPEN) {
     socket.send(JSON.stringify({
       type: 'config',
       trendWindowMin,
-      commentaryIntervalSec,
     }));
   }
 }
@@ -45,15 +33,13 @@ function getWebSocketUrl(projectId) {
   return `${protocol}//${window.location.host}/ws${qs}`;
 }
 
-export function useMetrics(projectId, trendWindowMin = 0.5, commentaryIntervalSec = DEFAULT_COMMENTARY_INTERVAL_SEC) {
+export function useMetrics(projectId, trendWindowMin = 0.5) {
   const [metrics, setMetrics] = useState(EMPTY_METRICS);
   const [connected, setConnected] = useState(false);
   const wsRef = useRef(null);
   const trendWindowRef = useRef(trendWindowMin);
-  const commentaryIntervalRef = useRef(commentaryIntervalSec);
 
   trendWindowRef.current = trendWindowMin;
-  commentaryIntervalRef.current = commentaryIntervalSec;
 
   useEffect(() => {
     if (projectId === null) {
@@ -80,7 +66,6 @@ export function useMetrics(projectId, trendWindowMin = 0.5, commentaryIntervalSe
         setConnected(true);
         sendClientConfig(ws, {
           trendWindowMin: trendWindowRef.current,
-          commentaryIntervalSec: commentaryIntervalRef.current,
         });
       };
       ws.onerror = () => setConnected(false);
@@ -98,7 +83,7 @@ export function useMetrics(projectId, trendWindowMin = 0.5, commentaryIntervalSe
             setMetrics({
               ...EMPTY_METRICS,
               ...data,
-              commentary: { ...EMPTY_COMMENTARY, ...data.commentary },
+              eventFeed: data.eventFeed ?? [],
             });
           }
         } catch (err) {
@@ -127,9 +112,8 @@ export function useMetrics(projectId, trendWindowMin = 0.5, commentaryIntervalSe
     if (projectId === null || !connected) return undefined;
     sendClientConfig(wsRef.current, {
       trendWindowMin,
-      commentaryIntervalSec,
     });
-  }, [projectId, connected, trendWindowMin, commentaryIntervalSec]);
+  }, [projectId, connected, trendWindowMin]);
 
   return { metrics, connected };
 }

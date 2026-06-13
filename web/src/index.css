@@ -6,27 +6,3 @@ body {
   margin: 0;
   min-height: 100vh;
 }
-
-@keyframes commentary-ticker {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
-}
-
-.commentary-ticker-track {
-  animation: commentary-ticker var(--ticker-duration, 60s) linear infinite;
-}
-
-.commentary-ticker-text {
-  color: #fbbf24;
-  text-shadow: 0 0 18px rgba(251, 191, 36, 0.45);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .commentary-ticker-track {
-    animation: none;
-  }
-}

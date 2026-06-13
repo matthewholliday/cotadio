@@ -1,4 +1,7 @@
-import { getCommentary, getEvents } from './store.js';
+import { describeEvent } from './commentary.js';
+import { getEvents } from './store.js';
+
+const MAX_EVENT_FEED = 100;
 
 const STATE_HOOKS = new Set([
   'afterAgentThought',
@@ -36,7 +39,7 @@ export function computeMetrics(projectId = 'default', options = {}) {
     shellOutcomeSummary: computeShellOutcomeSummary(recent, now, trendWindowMin),
     blastRadius: computeBlastRadius(recent),
     mcpUsage: computeMcpUsage(recent),
-    commentary: getCommentary(projectId),
+    eventFeed: computeEventFeed(recent),
     codeChurnSeries,
     codeChurnSummary: computeCodeChurnSummary(recent, now, trendWindowMin),
     sessionScatter: computeSessionScatter(events),
@@ -48,6 +51,14 @@ export function computeMetrics(projectId = 'default', options = {}) {
     },
     updatedAt: now,
   };
+}
+
+function computeEventFeed(events) {
+  return events.slice(-MAX_EVENT_FEED).map((e) => ({
+    id: e.id,
+    hook_event: e.hook_event,
+    text: describeEvent(e),
+  }));
 }
 
 function computeAgentState(events) {

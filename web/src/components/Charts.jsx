@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useId, useState } from 'react';
+import { createContext, useContext, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import {
   Area,
   AreaChart,
@@ -623,160 +623,61 @@ export function McpBarChart({ data }) {
   );
 }
 
-const TICKER_SPEEDS = {
-  slow: { label: 'Slow', multiplier: 1.5 },
-  medium: { label: 'Medium', multiplier: 0.85 },
-  fast: { label: 'Fast', multiplier: 0.45 },
+const EVENT_TYPE_STYLES = {
+  sessionStart: { symbol: '▶', color: 'text-sky-400' },
+  stop: { symbol: '■', color: 'text-slate-400' },
+  afterAgentThought: { symbol: '◉', color: 'text-violet-400' },
+  afterFileEdit: { symbol: '✎', color: 'text-emerald-400' },
+  afterTabFileEdit: { symbol: '✎', color: 'text-emerald-400' },
+  beforeShellExecution: { symbol: '$', color: 'text-amber-400' },
+  afterShellExecution: { symbol: '$', color: 'text-amber-300' },
+  beforeMCPExecution: { symbol: '⊞', color: 'text-cyan-400' },
+  afterMCPExecution: { symbol: '⊞', color: 'text-cyan-300' },
+  postToolUse: { symbol: '⚙', color: 'text-pink-400' },
 };
 
-function computeTickerDuration(text, speed = 'medium') {
-  const segment = `${text} · `;
-  const base = Math.max(50, Math.min(300, segment.length * 0.32));
-  return base * (TICKER_SPEEDS[speed]?.multiplier ?? 1);
+const DEFAULT_EVENT_STYLE = { symbol: '·', color: 'text-slate-400' };
+
+function getEventStyle(hookEvent) {
+  return EVENT_TYPE_STYLES[hookEvent] ?? DEFAULT_EVENT_STYLE;
 }
 
-function CommentaryTickerTape({ text, dense, speed = 'medium' }) {
-  const textSize = dense ? 'text-base' : 'text-xl';
-  const segment = `${text} · `;
-  const durationSec = computeTickerDuration(text, speed);
-
-  return (
-    <div
-      className={`commentary-ticker-text overflow-hidden ${textSize} tracking-wide`}
-      aria-live="polite"
-    >
-      <div
-        className="commentary-ticker-track flex w-max whitespace-nowrap"
-        style={{ '--ticker-duration': `${durationSec}s` }}
-      >
-        <span className="shrink-0 pr-8">{segment}</span>
-        <span className="shrink-0 pr-8" aria-hidden="true">
-          {segment}
-        </span>
-      </div>
-    </div>
-  );
-}
-
-function CommentaryFrame({ dense, padding, children, countdown, footer, frameClassName = 'border-border' }) {
-  return (
-    <div className={`rounded-lg border bg-panel ${frameClassName} ${padding}`}>
-      {children}
-      {footer}
-      {countdown}
-    </div>
-  );
-}
-
-export function Commentary({ commentary, tickerTape = false, tickerSpeed = 'medium' }) {
+export function Events({ events = [] }) {
   const mode = useLayoutMode();
   const dense = mode === 'dense';
   const expanded = mode === 'expanded';
-  const intervalSec = commentary?.intervalSec ?? 120;
-  const status = commentary?.status ?? 'idle';
-  const [secondsLeft, setSecondsLeft] = useState(() =>
-    computeSecondsLeft(commentary?.nextCommentaryAt, intervalSec),
-  );
-
-  useEffect(() => {
-    function tick() {
-      setSecondsLeft(computeSecondsLeft(commentary?.nextCommentaryAt, intervalSec));
-    }
-
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, [commentary?.nextCommentaryAt, intervalSec]);
-
+  const listRef = useRef(null);
   const padding = expanded ? 'px-6 py-5' : dense ? 'px-3 py-2' : 'px-4 py-3';
-  const textSize = expanded ? 'text-lg leading-relaxed' : dense ? 'text-xs' : 'text-sm';
-  const footerClass = `${expanded ? 'text-sm' : dense ? 'text-[10px]' : 'text-xs'} text-slate-500`;
-  const countdownClass = `font-mono tabular-nums ${expanded ? 'text-base' : dense ? 'text-xs' : 'text-sm'} font-medium text-accent`;
-  const showTickerContent = tickerTape && status === 'ready' && commentary?.text;
+  const textSize = expanded ? 'text-sm' : dense ? 'text-[10px]' : 'text-xs';
+  const height = expanded ? 'h-80' : dense ? 'h-36' : 'h-48';
 
-  const countdown = (
-    <p className={`${footerClass} mt-2`}>
-      <span className="text-slate-500">Next summary in </span>
-      <span className={countdownClass}>
-        {status === 'generating' ? '…' : formatCountdown(secondsLeft)}
-      </span>
-    </p>
-  );
+  const lastId = events[events.length - 1]?.id;
+  useLayoutEffect(() => {
+    const el = listRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [lastId]);
 
-  const metaFooter =
-    !showTickerContent && status === 'ready' && commentary?.text ? (
-      <p className={`mt-2 ${footerClass}`}>
-        {commentary.eventCount} event{commentary.eventCount === 1 ? '' : 's'}
-        {commentary.generatedAt != null && <> · updated {formatTime(commentary.generatedAt)}</>}
-      </p>
-    ) : null;
-
-  const frameProps = {
-    dense,
-    padding,
-    countdown,
-    footer: metaFooter,
-  };
-
-  if (status === 'disabled') {
+  if (!events.length) {
     return (
-      <CommentaryFrame {...frameProps}>
-        <p className={`${textSize} text-slate-500`}>Set ANTHROPIC_API_KEY to enable commentary</p>
-      </CommentaryFrame>
-    );
-  }
-
-  if (status === 'generating') {
-    return (
-      <CommentaryFrame {...frameProps}>
-        <p className={`${textSize} text-slate-400`}>Generating summary…</p>
-      </CommentaryFrame>
-    );
-  }
-
-  if (status === 'error') {
-    return (
-      <CommentaryFrame {...frameProps} frameClassName="border-danger/30">
-        <p className={`${textSize} text-danger`}>{commentary.error ?? 'Failed to generate summary'}</p>
-      </CommentaryFrame>
-    );
-  }
-
-  if (status === 'idle' || !commentary?.text) {
-    return (
-      <CommentaryFrame {...frameProps}>
-        <p className={`${textSize} text-slate-500`}>
-          No activity in the last {intervalSec} seconds
-        </p>
-      </CommentaryFrame>
+      <div className={`rounded-lg border border-border bg-panel ${padding} ${height} flex items-center`}>
+        <p className={`${textSize} text-slate-500`}>No hook events in the last hour</p>
+      </div>
     );
   }
 
   return (
-    <CommentaryFrame {...frameProps}>
-      {showTickerContent ? (
-        <CommentaryTickerTape text={commentary.text} dense={dense && !expanded} speed={tickerSpeed} />
-      ) : (
-        <p className={`${textSize} ${expanded ? 'text-slate-100' : 'text-slate-200'}`}>{commentary.text}</p>
-      )}
-    </CommentaryFrame>
+    <div ref={listRef} className={`rounded-lg border border-border bg-panel ${padding} ${height} overflow-y-auto`}>
+      {events.map((event) => {
+        const style = getEventStyle(event.hook_event);
+        return (
+          <div key={event.id} className={`flex items-baseline gap-1.5 font-mono ${textSize} leading-relaxed`}>
+            <span className={`shrink-0 ${style.color}`}>{style.symbol}</span>
+            <span className="text-slate-400">{event.text}</span>
+          </div>
+        );
+      })}
+    </div>
   );
-}
-
-function computeSecondsLeft(nextCommentaryAt, intervalSec = 120) {
-  if (nextCommentaryAt != null) {
-    return Math.max(0, Math.ceil(nextCommentaryAt - Date.now() / 1000));
-  }
-  return intervalSec;
-}
-
-function formatCountdown(totalSeconds) {
-  if (totalSeconds >= 60) {
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${minutes}:${String(seconds).padStart(2, '0')}`;
-  }
-  return `${totalSeconds}s`;
 }
 
 export function CodeChurnLine({ data }) {
