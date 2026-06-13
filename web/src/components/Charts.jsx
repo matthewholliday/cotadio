@@ -8,8 +8,6 @@ import {
   Cell,
   Line,
   LineChart,
-  Pie,
-  PieChart,
   ResponsiveContainer,
   Scatter,
   ScatterChart,
@@ -61,6 +59,17 @@ function ChartArea({ children, className = '' }) {
   );
 }
 
+function NoData({ className = '' }) {
+  const dense = useDensity();
+  return (
+    <div
+      className={`flex flex-1 items-center justify-center ${dense ? 'min-h-[110px]' : 'min-h-[220px]'} ${className}`}
+    >
+      <p className={`text-slate-500 ${dense ? 'text-xs' : 'text-sm'}`}>No Data</p>
+    </div>
+  );
+}
+
 function panelStorageKey(title) {
   return `panel-expanded:${title}`;
 }
@@ -75,7 +84,58 @@ function readExpanded(title, defaultExpanded) {
   return defaultExpanded;
 }
 
-export function Panel({ title, subtitle, children, className = '', defaultExpanded = true, dragHandleProps = null }) {
+function MetricTooltip({ text }) {
+  const dense = useDensity();
+  const tooltipId = useId();
+
+  return (
+    <span
+      className="group/info relative inline-flex shrink-0"
+      onClick={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
+    >
+      <button
+        type="button"
+        aria-describedby={tooltipId}
+        className={`rounded-full text-slate-500 transition hover:bg-white/5 hover:text-slate-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 ${
+          dense ? 'p-0.5' : 'p-1'
+        }`}
+      >
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+          className={dense ? 'h-3 w-3' : 'h-3.5 w-3.5'}
+        >
+          <path
+            fillRule="evenodd"
+            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z"
+            clipRule="evenodd"
+          />
+        </svg>
+      </button>
+      <span
+        id={tooltipId}
+        role="tooltip"
+        className={`pointer-events-none absolute right-0 top-full z-50 mt-1.5 w-64 rounded-lg border border-border bg-[#12141a] px-3 py-2 text-left font-normal normal-case tracking-normal text-slate-300 opacity-0 shadow-xl shadow-black/40 transition-opacity group-hover/info:opacity-100 group-focus-within/info:opacity-100 ${
+          dense ? 'text-[10px] leading-snug' : 'text-xs leading-relaxed'
+        }`}
+      >
+        {text}
+      </span>
+    </span>
+  );
+}
+
+export function Panel({
+  title,
+  subtitle,
+  tooltip,
+  children,
+  className = '',
+  defaultExpanded = true,
+  dragHandleProps = null,
+}) {
   const dense = useDensity();
   const contentId = useId();
   const [expanded, setExpanded] = useState(() => readExpanded(title, defaultExpanded));
@@ -94,7 +154,7 @@ export function Panel({ title, subtitle, children, className = '', defaultExpand
 
   return (
     <section
-      className={`group/panel flex h-full flex-col rounded-xl border border-border bg-surface shadow-lg shadow-black/20 ${
+      className={`group/panel flex h-full flex-col overflow-visible rounded-xl border border-border bg-surface shadow-lg shadow-black/20 ${
         dense ? 'p-1.5' : 'p-3'
       } ${className}`}
     >
@@ -117,38 +177,41 @@ export function Panel({ title, subtitle, children, className = '', defaultExpand
               </svg>
             </button>
           )}
-          <button
-            type="button"
-            onClick={toggle}
-            aria-expanded={expanded}
-            aria-controls={contentId}
-            className="group flex min-w-0 flex-1 items-start gap-2 text-left"
-          >
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              className={`mt-0.5 h-4 w-4 shrink-0 text-slate-500 transition-transform duration-200 group-hover:text-slate-300 ${
-                expanded ? 'rotate-90' : ''
-              }`}
+          <div className="flex min-w-0 flex-1 items-start gap-1">
+            <button
+              type="button"
+              onClick={toggle}
+              aria-expanded={expanded}
+              aria-controls={contentId}
+              className="group flex min-w-0 flex-1 items-start gap-2 text-left"
             >
-              <path
-                fillRule="evenodd"
-                d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
-                clipRule="evenodd"
-              />
-            </svg>
-            <span className="min-w-0 flex-1">
-              <h2
-                className={`font-semibold tracking-wide text-slate-100 group-hover:text-white ${
-                  dense ? 'text-xs leading-tight' : 'text-sm'
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                className={`mt-0.5 h-4 w-4 shrink-0 text-slate-500 transition-transform duration-200 group-hover:text-slate-300 ${
+                  expanded ? 'rotate-90' : ''
                 }`}
               >
-                {title}
-              </h2>
-              {subtitle && !dense && <p className="mt-0.5 text-xs text-slate-500">{subtitle}</p>}
-            </span>
-          </button>
+                <path
+                  fillRule="evenodd"
+                  d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <span className="min-w-0 flex-1">
+                <h2
+                  className={`font-semibold tracking-wide text-slate-100 group-hover:text-white ${
+                    dense ? 'text-xs leading-tight' : 'text-sm'
+                  }`}
+                >
+                  {title}
+                </h2>
+                {subtitle && !dense && <p className="mt-0.5 text-xs text-slate-500">{subtitle}</p>}
+              </span>
+            </button>
+            {tooltip && <MetricTooltip text={tooltip} />}
+          </div>
         </div>
       </header>
       <div
@@ -162,24 +225,23 @@ export function Panel({ title, subtitle, children, className = '', defaultExpand
   );
 }
 
-export function AgentStateDonut({ data }) {
+export function AgentStateBarChart({ data }) {
   const dense = useDensity();
-  const chartData = data.length ? data : [{ name: 'Waiting', value: 1, percent: 100 }];
+  if (!data.length || !data.some((d) => d.value > 0)) {
+    return <NoData />;
+  }
+  const tick = chartTick(dense);
   return (
     <ChartArea>
-      <PieChart>
-        <Pie
-          data={chartData}
-          dataKey="value"
-          nameKey="name"
-          innerRadius={dense ? 32 : 55}
-          outerRadius={dense ? 52 : 85}
-          paddingAngle={dense ? 2 : 3}
-        >
-          {chartData.map((_, i) => (
-            <Cell key={i} fill={COLORS[i % COLORS.length]} stroke="transparent" />
-          ))}
-        </Pie>
+      <BarChart data={data} layout="vertical" margin={{ left: dense ? 4 : 8, right: dense ? 8 : 12 }}>
+        <CartesianGrid stroke="#2a2f3d" strokeDasharray="3 3" horizontal={false} />
+        <XAxis type="number" tick={tick} allowDecimals={false} />
+        <YAxis
+          type="category"
+          dataKey="name"
+          width={dense ? 88 : 112}
+          tick={tick}
+        />
         <Tooltip
           contentStyle={{
             background: '#1a1d27',
@@ -191,13 +253,21 @@ export function AgentStateDonut({ data }) {
           itemStyle={{ color: '#e2e8f0' }}
           formatter={(value, name, props) => [`${value} (${props.payload.percent}%)`, name]}
         />
-      </PieChart>
+        <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+          {data.map((_, i) => (
+            <Cell key={i} fill={COLORS[i % COLORS.length]} />
+          ))}
+        </Bar>
+      </BarChart>
     </ChartArea>
   );
 }
 
 export function SecurityGauge({ rate, blocked, allowed }) {
   const dense = useDensity();
+  if (blocked + allowed === 0) {
+    return <NoData />;
+  }
   const clamped = Math.min(rate, 100);
   const hue = clamped < 5 ? 142 : clamped < 15 ? 45 : 0;
   return (
@@ -269,6 +339,9 @@ function TrendStat({ value, unit, direction, positive = 'up', footer }) {
 }
 
 export function ShellOutcomeGauge({ success, failure, rate, direction }) {
+  if (success + failure === 0) {
+    return <NoData />;
+  }
   return (
     <TrendStat
       value={`${rate}%`}
@@ -286,6 +359,9 @@ export function ShellOutcomeGauge({ success, failure, rate, direction }) {
 }
 
 export function ThinkTimeGauge({ avgSec, count, direction }) {
+  if (count === 0) {
+    return <NoData />;
+  }
   return (
     <TrendStat
       value={avgSec}
@@ -297,7 +373,10 @@ export function ThinkTimeGauge({ avgSec, count, direction }) {
   );
 }
 
-export function CodeChurnGauge({ added, removed, net, direction }) {
+export function CodeChurnGauge({ added, removed, net, direction, total }) {
+  if ((total ?? added + removed) === 0) {
+    return <NoData />;
+  }
   return (
     <TrendStat
       value={net >= 0 ? `+${net}` : net}
@@ -316,6 +395,9 @@ export function CodeChurnGauge({ added, removed, net, direction }) {
 
 export function ThinkTimeLine({ data }) {
   const dense = useDensity();
+  if (!data.length || !data.some((d) => d.count > 0)) {
+    return <NoData />;
+  }
   const chartData = data.map((d) => ({ ...d, label: formatTime(d.time) }));
   const tick = chartTick(dense);
   return (
@@ -335,6 +417,9 @@ export function ThinkTimeLine({ data }) {
 
 export function ShellOutcomeArea({ data }) {
   const dense = useDensity();
+  if (!data.length || !data.some((d) => d.success + d.failure > 0)) {
+    return <NoData />;
+  }
   const chartData = data.map((d) => ({ ...d, label: formatTime(d.time) }));
   const tick = chartTick(dense);
   return (
@@ -356,34 +441,38 @@ export function ShellOutcomeArea({ data }) {
 export function BlastRadiusTreemap({ data }) {
   const dense = useDensity();
   if (!data.length) {
-    return (
-      <div className={`flex flex-1 items-center justify-center ${dense ? 'min-h-[110px]' : 'min-h-[220px]'}`}>
-        <p className={`text-slate-500 ${dense ? 'text-xs' : 'text-sm'}`}>No file edits yet</p>
-      </div>
-    );
+    return <NoData />;
   }
   const max = Math.max(...data.map((d) => d.value));
   return (
-    <div className={`flex-1 overflow-y-auto ${dense ? 'min-h-[110px] max-h-[140px]' : 'min-h-[220px]'}`}>
-      <div className={`grid grid-cols-2 sm:grid-cols-3 ${dense ? 'gap-1' : 'gap-2'}`}>
+    <div
+      className={`flex min-h-0 flex-1 flex-col overflow-y-auto ${
+        dense ? 'min-h-[110px] max-h-[140px]' : 'min-h-[220px]'
+      }`}
+    >
+      <div className={`flex w-full flex-col ${dense ? 'gap-1' : 'gap-2'}`}>
         {data.map((item) => {
           const intensity = 0.25 + (item.value / max) * 0.75;
           return (
             <div
               key={item.name}
-              className={`rounded border border-border transition hover:border-accent/50 ${
-                dense ? 'p-1.5' : 'rounded-lg p-3'
+              className={`flex w-full items-center justify-between rounded border border-border transition hover:border-accent/50 ${
+                dense ? 'px-2 py-1.5' : 'rounded-lg px-3 py-2.5'
               }`}
               style={{ background: `rgba(99, 102, 241, ${intensity * 0.35})` }}
             >
               <p
-                className={`truncate font-mono text-slate-300 ${dense ? 'text-[10px]' : 'text-xs'}`}
+                className={`min-w-0 flex-1 truncate font-mono text-slate-300 ${
+                  dense ? 'text-[10px]' : 'text-xs'
+                }`}
                 title={item.name}
               >
                 {item.name}
               </p>
-              <p className={`font-semibold tabular-nums ${dense ? 'text-sm' : 'mt-1 text-lg'}`}>{item.value}</p>
-              {!dense && <p className="text-[10px] text-slate-500">edits</p>}
+              <div className={`shrink-0 text-right ${dense ? 'ml-2' : 'ml-3'}`}>
+                <p className={`font-semibold tabular-nums ${dense ? 'text-sm' : 'text-lg'}`}>{item.value}</p>
+                {!dense && <p className="text-[10px] text-slate-500">edits</p>}
+              </div>
             </div>
           );
         })}
@@ -394,11 +483,13 @@ export function BlastRadiusTreemap({ data }) {
 
 export function McpBarChart({ data }) {
   const dense = useDensity();
-  const chartData = data.length ? data : [{ name: 'none', count: 0 }];
+  if (!data.length) {
+    return <NoData />;
+  }
   const tick = chartTick(dense);
   return (
     <ChartArea>
-      <BarChart data={chartData} layout="vertical" margin={{ left: dense ? 8 : 20 }}>
+      <BarChart data={data} layout="vertical" margin={{ left: dense ? 8 : 20 }}>
         <CartesianGrid stroke="#2a2f3d" strokeDasharray="3 3" horizontal={false} />
         <XAxis type="number" tick={tick} allowDecimals={false} />
         <YAxis
@@ -419,15 +510,7 @@ export function McpBarChart({ data }) {
 export function AlertTicker({ alerts }) {
   const dense = useDensity();
   if (!alerts.length) {
-    return (
-      <div
-        className={`flex items-center justify-center rounded-lg bg-panel text-slate-500 ${
-          dense ? 'h-7 text-xs' : 'h-12 text-sm'
-        }`}
-      >
-        No security events in the last hour
-      </div>
-    );
+    return <NoData className={dense ? 'min-h-[28px]' : 'min-h-[48px]'} />;
   }
 
   const items = [...alerts, ...alerts];
@@ -455,6 +538,9 @@ export function AlertTicker({ alerts }) {
 
 export function CodeChurnLine({ data }) {
   const dense = useDensity();
+  if (!data.length || !data.some((d) => d.added + d.removed > 0)) {
+    return <NoData />;
+  }
   const chartData = data.map((d) => ({ ...d, label: formatTime(d.time) }));
   const tick = chartTick(dense);
   return (
@@ -476,7 +562,9 @@ export function CodeChurnLine({ data }) {
 
 export function SessionScatter({ data }) {
   const dense = useDensity();
-  const chartData = data.length ? data : [{ durationMin: 0, model: 'none', timestamp: Date.now() / 1000 }];
+  if (!data.length) {
+    return <NoData />;
+  }
   const tick = chartTick(dense);
   return (
     <ChartArea>
@@ -502,7 +590,7 @@ export function SessionScatter({ data }) {
           contentStyle={{ background: '#1a1d27', border: '1px solid #2a2f3d', borderRadius: 8 }}
           formatter={(val, name) => [name === 'Duration' ? `${val} min` : formatTime(val), name]}
         />
-        <Scatter data={chartData} fill="#a78bfa" />
+        <Scatter data={data} fill="#a78bfa" />
       </ScatterChart>
     </ChartArea>
   );
@@ -510,6 +598,9 @@ export function SessionScatter({ data }) {
 
 export function HumanInterventions({ data }) {
   const dense = useDensity();
+  if (data.total === 0) {
+    return <NoData />;
+  }
   const spark = data.sparkline.map((d) => ({ ...d, label: formatTime(d.time) }));
   return (
     <div className={`flex flex-1 flex-col ${dense ? 'min-h-[110px]' : 'min-h-[220px]'}`}>
