@@ -58,7 +58,7 @@ export function DensityToggle({ checked, onChange, className = '' }) {
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
-        className="h-3.5 w-3.5 rounded border-border bg-panel text-accent focus:ring-accent/50"
+        className="h-3.5 w-3.5 rounded-md border-border bg-panel text-accent focus:ring-accent/50"
       />
       High density
     </label>
@@ -253,7 +253,7 @@ export function Panel({
                   onExpand();
                 }}
                 aria-label={`Expand ${title}`}
-                className={`shrink-0 rounded text-slate-500 transition hover:bg-white/5 hover:text-slate-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 ${
+                className={`shrink-0 rounded-lg text-slate-500 transition hover:bg-white/5 hover:text-slate-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 ${
                   dense ? 'p-0.5' : 'p-1'
                 }`}
               >
@@ -560,12 +560,12 @@ export function BlastRadiusTreemap({ data }) {
           return (
             <div
               key={item.name}
-              className={`flex w-full items-center justify-between rounded border border-border transition hover:border-accent/50 ${
+              className={`flex w-full items-center justify-between rounded-lg border border-border transition hover:border-accent/50 ${
                 mode === 'expanded'
-                  ? 'rounded-lg px-4 py-3.5'
+                  ? 'px-4 py-3.5'
                   : mode === 'dense'
                     ? 'px-2 py-1.5'
-                    : 'rounded-lg px-3 py-2.5'
+                    : 'px-3 py-2.5'
               }`}
               style={{ background: `rgba(99, 102, 241, ${intensity * 0.35})` }}
             >
@@ -799,7 +799,7 @@ export function HumanInterventions({ data }) {
       <div className="min-h-0 flex-1">
         <ResponsiveContainer width="100%" height={sparkHeight}>
           <BarChart data={spark}>
-            <Bar dataKey="count" fill="#f59e0b" radius={[2, 2, 0, 0]} />
+            <Bar dataKey="count" fill="#f59e0b" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>

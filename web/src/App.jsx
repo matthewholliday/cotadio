@@ -209,7 +209,7 @@ function ExpandedPanelModal({ title, subtitle, tooltip, onClose, children }) {
             type="button"
             onClick={onClose}
             aria-label="Close expanded panel"
-            className="shrink-0 rounded p-1 text-slate-500 hover:bg-white/5 hover:text-slate-300"
+            className="shrink-0 rounded-lg p-1 text-slate-500 hover:bg-white/5 hover:text-slate-300"
           >
             <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5" aria-hidden="true">
               <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
@@ -251,7 +251,7 @@ function SettingsModal({
             type="button"
             onClick={onClose}
             aria-label="Close settings"
-            className="rounded p-1 text-slate-500 hover:bg-white/5 hover:text-slate-300"
+            className="rounded-lg p-1 text-slate-500 hover:bg-white/5 hover:text-slate-300"
           >
             <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4" aria-hidden="true">
               <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
@@ -507,7 +507,10 @@ export default function App() {
 
       {!isElectron && (
         <header className="sticky top-0 z-10 border-b border-border bg-panel/90 backdrop-blur">
-          <div className="mx-auto flex max-w-[1600px] items-center justify-end px-4 py-2">
+          <div className="relative mx-auto flex max-w-[1600px] items-center justify-between px-4 py-2">
+            <h1 className="bg-gradient-to-r from-amber-300 via-orange-400 to-rose-400 bg-clip-text text-xl font-bold tracking-tight text-transparent">
+              catadio
+            </h1>
             <div className="flex items-center gap-4 text-sm">
               <DensityToggle checked={highDensity} onChange={handleHighDensityChange} />
               <div className="hidden sm:block text-right">

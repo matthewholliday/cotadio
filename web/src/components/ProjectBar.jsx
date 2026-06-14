@@ -99,9 +99,9 @@ function ProjectPickerModal({ project, recent, onOpen, onSwitch, onClose }) {
   };
 
   return (
-    <div
+      <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-start justify-start bg-black/60 backdrop-blur-sm pt-14 pl-6"
+      className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 backdrop-blur-sm pt-14 px-6"
       onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
     >
       <div
@@ -115,8 +115,9 @@ function ProjectPickerModal({ project, recent, onOpen, onSwitch, onClose }) {
         {project && (
           <div className="border-b border-border px-4 py-3">
             <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Current project</p>
-            <p className="mt-1 truncate text-sm font-medium text-white">{project.name}</p>
-            <p className="truncate text-xs text-slate-500">{project.path}</p>
+            <p className="mt-1 truncate text-sm font-medium text-white" title={project.path}>
+              {project.path}
+            </p>
           </div>
         )}
 
@@ -136,8 +137,9 @@ function ProjectPickerModal({ project, recent, onOpen, onSwitch, onClose }) {
                       p.id === project?.id ? 'opacity-40 pointer-events-none' : ''
                     }`}
                   >
-                    <span className="text-sm font-medium text-white">{p.name}</span>
-                    <span className="truncate text-xs text-slate-500">{p.path}</span>
+                    <span className="truncate text-sm font-medium text-white" title={p.path}>
+                      {p.path}
+                    </span>
                   </button>
                 </li>
               ))}
@@ -150,7 +152,7 @@ function ProjectPickerModal({ project, recent, onOpen, onSwitch, onClose }) {
           <button
             type="button"
             onClick={handleOpen}
-            className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-accent transition hover:bg-accent/10"
+            className="flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium text-accent transition hover:bg-accent/10"
           >
             <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 shrink-0" aria-hidden="true">
               <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
@@ -223,32 +225,39 @@ export function ProjectBar({ project, onOpen, onSwitch, connected, highDensity, 
   return (
     <>
       <div className={`border-b border-border bg-[#0f1117] ${isElectron && isMac ? 'pt-7' : ''}`}>
-        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-6 py-3">
+        <div className="relative mx-auto flex max-w-[1600px] items-center justify-between gap-3 px-6 pt-3 pb-5">
 
-          {/* Left: project picker trigger */}
-          <div className="flex min-w-0 flex-1 items-center">
+          {/* Left: app title */}
+          <div className="shrink-0">
+            <h1 className="bg-gradient-to-r from-amber-300 via-orange-400 to-rose-400 bg-clip-text text-xl font-bold tracking-tight text-transparent">
+              catadio
+            </h1>
+          </div>
+
+          {/* Center: project picker trigger */}
+          <div className="pointer-events-none absolute left-1/2 top-1/2 flex max-w-[min(420px,calc(100%-24rem))] -translate-x-1/2 -translate-y-1/2 justify-center">
             <button
               type="button"
               onClick={() => setPickerOpen(true)}
               aria-haspopup="dialog"
-              className="group flex min-w-0 items-center gap-2 rounded-lg px-2 py-1.5 text-left transition hover:bg-white/5"
+              className="pointer-events-auto group flex min-w-0 max-w-full items-center gap-1.5 rounded-md border border-accent/40 bg-accent/10 px-3 py-1.5 text-left shadow-[0_0_20px_rgba(99,102,241,0.15)] transition hover:border-accent/60 hover:bg-accent/20"
             >
               {project ? (
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-white group-hover:text-slate-200">
-                    {project.name}
-                  </p>
-                  <p className="truncate text-xs text-slate-500">{project.path}</p>
-                </div>
+                <p
+                  className="min-w-0 truncate text-sm font-medium text-accent group-hover:text-indigo-300"
+                  title={project.path}
+                >
+                  {project.path}
+                </p>
               ) : (
-                <p className="text-sm text-slate-400 group-hover:text-slate-300">
+                <p className="text-xs font-medium text-accent/80 group-hover:text-accent">
                   Select a project…
                 </p>
               )}
               <svg
                 viewBox="0 0 20 20"
                 fill="currentColor"
-                className="ml-1 h-4 w-4 shrink-0 text-slate-500 group-hover:text-slate-400"
+                className="ml-0.5 h-3.5 w-3.5 shrink-0 text-accent/70 group-hover:text-accent"
                 aria-hidden="true"
               >
                 <path
@@ -261,7 +270,7 @@ export function ProjectBar({ project, onOpen, onSwitch, connected, highDensity, 
           </div>
 
           {/* Right: controls */}
-          <div className="flex items-center gap-3 text-sm">
+          <div className="flex shrink-0 items-center gap-3 text-sm">
             <DensityToggle checked={highDensity} onChange={onHighDensityChange} />
             {project && (
               <button

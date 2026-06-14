@@ -34,7 +34,7 @@
   },
   "build": {
     "appId": "com.cursor.agent-dashboard",
-    "productName": "Agent Dashboard",
+    "productName": "catadio",
     "asar": false,
     "files": [
       "electron/**",
