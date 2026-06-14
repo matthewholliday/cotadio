@@ -50,19 +50,25 @@ function chartTick(dense, color) {
   return { fill: color, fontSize: dense ? 8 : 10 };
 }
 
-export function DensitySelect({ value, onChange, className = '' }) {
+export function DensitySelect({ value, onChange, className = '', showLabel = true }) {
+  const select = (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className={`w-full rounded border border-border bg-panel px-2 py-0.5 text-xs text-fg focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30 ${className}`}
+    >
+      <option value="low">Low</option>
+      <option value="high">High</option>
+      <option value="background">Background</option>
+    </select>
+  );
+
+  if (!showLabel) return select;
+
   return (
     <label className={`flex cursor-pointer select-none items-center gap-2 text-sm text-fg-soft ${className}`}>
       <span className="shrink-0">Information Density</span>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="rounded-md border border-border bg-panel px-2 py-1 text-sm text-fg focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/30"
-      >
-        <option value="low">Low Density</option>
-        <option value="high">High Density</option>
-        <option value="background">Background</option>
-      </select>
+      {select}
     </label>
   );
 }
