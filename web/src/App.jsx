@@ -263,26 +263,48 @@ function AppFooter() {
   );
 }
 
-function SettingsInfoTooltip({ text }) {
+function SettingsInfoTooltip({ text, compact = false }) {
   return (
     <div className="group relative inline-flex shrink-0 items-center">
       <svg
         viewBox="0 0 16 16"
         fill="currentColor"
-        className="h-3 w-3 cursor-default text-fg-muted group-hover:text-fg-soft"
+        className={`cursor-default text-fg-muted group-hover:text-fg-soft ${compact ? 'h-2.5 w-2.5' : 'h-3 w-3'}`}
         aria-hidden="true"
       >
         <path fillRule="evenodd" d="M8 15A7 7 0 108 1a7 7 0 000 14zm0-10.5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 018 4.5zm0-1.25a.875.875 0 100-1.75.875.875 0 000 1.75z" clipRule="evenodd" />
       </svg>
-      <div className="pointer-events-none invisible absolute bottom-full left-1/2 z-10 mb-1.5 w-52 -translate-x-1/2 rounded border border-border bg-panel px-2 py-1.5 text-[11px] leading-snug text-fg-soft shadow-xl group-hover:visible">
+      <div
+        className={`pointer-events-none invisible absolute bottom-full z-10 mb-1 rounded border border-border bg-panel px-1.5 py-1 leading-snug text-fg-soft shadow-xl group-hover:visible ${
+          compact
+            ? 'left-0 w-40 text-[9px]'
+            : 'left-1/2 w-52 -translate-x-1/2 px-2 py-1.5 text-[11px]'
+        }`}
+      >
         {text}
-        <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-border" />
+        <div
+          className={`absolute top-full border-4 border-transparent border-t-border ${
+            compact ? 'left-2' : 'left-1/2 -translate-x-1/2'
+          }`}
+        />
       </div>
     </div>
   );
 }
 
-function SettingsRow({ label, tooltip, children }) {
+function SettingsRow({ label, tooltip, children, compact = false }) {
+  if (compact) {
+    return (
+      <div className="flex flex-col gap-1 py-1">
+        <div className="flex items-center gap-1 text-[10px] text-fg-muted">
+          <span>{label}</span>
+          {tooltip && <SettingsInfoTooltip text={tooltip} compact />}
+        </div>
+        <div>{children}</div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex items-center gap-3 py-1.5">
       <div className="flex w-28 shrink-0 items-center gap-1 text-xs text-fg-muted">
@@ -303,12 +325,133 @@ function SettingsModal({
   onTrendWindowMinChange,
   theme,
   onThemeChange,
+  compact = false,
 }) {
   useEffect(() => {
     const handleKey = (e) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
   }, [onClose]);
+
+  const controlText = compact ? 'text-[10px]' : 'text-xs';
+  const controlPadding = compact ? 'px-1.5 py-0.5' : 'px-2 py-0.5';
+
+  const settingsBody = (
+    <div className="divide-y divide-border/60">
+      <SettingsRow
+        compact={compact}
+        label="Theme"
+        tooltip="Switch between dark and light color schemes. Your preference is saved and applied on next load."
+      >
+        <div className={`flex gap-0.5 rounded border border-border p-0.5 ${compact ? 'flex-col' : ''}`}>
+          <button
+            type="button"
+            onClick={() => onThemeChange('dark')}
+            className={`flex-1 rounded ${controlPadding} ${controlText} font-medium transition ${
+              theme === 'dark'
+                ? 'bg-accent/20 text-accent'
+                : 'text-fg-muted hover:text-fg-soft'
+            }`}
+          >
+            Dark
+          </button>
+          <button
+            type="button"
+            onClick={() => onThemeChange('light')}
+            className={`flex-1 rounded ${controlPadding} ${controlText} font-medium transition ${
+              theme === 'light'
+                ? 'bg-accent/20 text-accent'
+                : 'text-fg-muted hover:text-fg-soft'
+            }`}
+          >
+            Light
+          </button>
+        </div>
+      </SettingsRow>
+
+      <SettingsRow
+        compact={compact}
+        label="Density"
+        tooltip="Choose how much information is shown. High packs more panels on screen; Background reduces to a compact floating readout."
+      >
+        <DensitySelect
+          value={densityMode}
+          onChange={onDensityModeChange}
+          showLabel={false}
+          className={compact ? 'text-[10px]' : ''}
+        />
+      </SettingsRow>
+
+      <SettingsRow
+        compact={compact}
+        label="Trend window"
+        tooltip="How far back the think time, shell outcome, and code churn trend gauges look when computing values and direction arrows."
+      >
+        <div className="flex items-center gap-1">
+          <input
+            type="number"
+            min="0.1"
+            max="60"
+            step="0.1"
+            value={trendWindowMin}
+            onChange={(e) => {
+              const parsed = Number(e.target.value);
+              if (Number.isFinite(parsed) && parsed > 0) {
+                onTrendWindowMinChange(Math.min(parsed, 60));
+              }
+            }}
+            className={`rounded border border-border bg-panel text-fg focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30 ${
+              compact ? 'w-14 px-1 py-0.5 text-[10px]' : 'w-16 px-1.5 py-0.5 text-xs'
+            }`}
+          />
+          <span className={`${controlText} text-fg-muted`}>min</span>
+        </div>
+      </SettingsRow>
+
+      <SettingsRow
+        compact={compact}
+        label="Layout"
+        tooltip="Resets the panel order to the original default arrangement."
+      >
+        <button
+          type="button"
+          onClick={onResetLayout}
+          className={`rounded bg-accent/20 ${controlPadding} ${controlText} font-medium text-accent hover:bg-accent/30`}
+        >
+          Reset
+        </button>
+      </SettingsRow>
+    </div>
+  );
+
+  if (compact) {
+    return (
+      <div
+        className="fixed inset-0 z-50 flex flex-col bg-black/50 p-2 pt-10"
+        onClick={onClose}
+      >
+        <div
+          className="window-no-drag flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-2xl"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex shrink-0 items-center justify-between border-b border-border px-2 py-1.5">
+            <h2 className="text-[10px] font-semibold text-fg">Settings</h2>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close settings"
+              className="rounded p-1 text-fg-muted hover:bg-overlay/5 hover:text-fg-soft"
+            >
+              <svg viewBox="0 0 20 20" fill="currentColor" className="h-3 w-3" aria-hidden="true">
+                <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+              </svg>
+            </button>
+          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto px-2 py-1.5">{settingsBody}</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -333,82 +476,7 @@ function SettingsModal({
           </button>
         </div>
 
-        <div className="px-3 py-1.5">
-          <div className="divide-y divide-border/60">
-            <SettingsRow
-              label="Theme"
-              tooltip="Switch between dark and light color schemes. Your preference is saved and applied on next load."
-            >
-              <div className="flex gap-0.5 rounded border border-border p-0.5">
-                <button
-                  type="button"
-                  onClick={() => onThemeChange('dark')}
-                  className={`flex-1 rounded px-2 py-0.5 text-xs font-medium transition ${
-                    theme === 'dark'
-                      ? 'bg-accent/20 text-accent'
-                      : 'text-fg-muted hover:text-fg-soft'
-                  }`}
-                >
-                  Dark
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onThemeChange('light')}
-                  className={`flex-1 rounded px-2 py-0.5 text-xs font-medium transition ${
-                    theme === 'light'
-                      ? 'bg-accent/20 text-accent'
-                      : 'text-fg-muted hover:text-fg-soft'
-                  }`}
-                >
-                  Light
-                </button>
-              </div>
-            </SettingsRow>
-
-            <SettingsRow
-              label="Density"
-              tooltip="Choose how much information is shown. High packs more panels on screen; Background reduces to a compact floating readout."
-            >
-              <DensitySelect value={densityMode} onChange={onDensityModeChange} showLabel={false} />
-            </SettingsRow>
-
-            <SettingsRow
-              label="Trend window"
-              tooltip="How far back the think time, shell outcome, and code churn trend gauges look when computing values and direction arrows."
-            >
-              <div className="flex items-center gap-1.5">
-                <input
-                  type="number"
-                  min="0.1"
-                  max="60"
-                  step="0.1"
-                  value={trendWindowMin}
-                  onChange={(e) => {
-                    const parsed = Number(e.target.value);
-                    if (Number.isFinite(parsed) && parsed > 0) {
-                      onTrendWindowMinChange(Math.min(parsed, 60));
-                    }
-                  }}
-                  className="w-16 rounded border border-border bg-panel px-1.5 py-0.5 text-xs text-fg focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30"
-                />
-                <span className="text-xs text-fg-muted">min</span>
-              </div>
-            </SettingsRow>
-
-            <SettingsRow
-              label="Layout"
-              tooltip="Resets the panel order to the original default arrangement."
-            >
-              <button
-                type="button"
-                onClick={onResetLayout}
-                className="rounded bg-accent/20 px-2 py-0.5 text-xs font-medium text-accent hover:bg-accent/30"
-              >
-                Reset
-              </button>
-            </SettingsRow>
-          </div>
-        </div>
+        <div className="px-3 py-1.5">{settingsBody}</div>
       </div>
     </div>
   );
@@ -640,6 +708,7 @@ export default function App() {
 
   const settingsModal = settingsOpen && (
     <SettingsModal
+      compact={isBackground}
       onClose={() => setSettingsOpen(false)}
       onResetLayout={handleResetLayout}
       densityMode={densityMode}

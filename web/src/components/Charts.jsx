@@ -917,7 +917,7 @@ const BG_METRICS = [
 export function BackgroundView({ metrics, connected, onOpenSettings }) {
   return (
     <div className="flex h-screen flex-col bg-bg">
-      <div className="window-drag flex shrink-0 items-center justify-between border-b border-overlay/10 px-2 pb-2 pt-8">
+      <div className="window-drag flex shrink-0 items-center justify-between border-b border-border bg-panel/90 px-2 pb-1.5 pt-8">
         <span className="bg-gradient-to-r from-amber-300 via-orange-400 to-rose-400 bg-clip-text text-xs font-bold tracking-tight text-transparent">
           catadio
         </span>
@@ -942,26 +942,30 @@ export function BackgroundView({ metrics, connected, onOpenSettings }) {
           )}
         </div>
       </div>
-      <ul className="grid min-h-0 flex-1 grid-cols-2 gap-x-1 overflow-y-auto px-1 py-0.5 content-start">
-        {BG_METRICS.map(({ abbr, full, getValue, format }) => {
-          const raw = getValue(metrics);
-          const display = format(raw);
-          return (
-            <li
-              key={abbr}
-              title={full}
-              className="group flex items-baseline gap-1 px-1 py-1.5 transition-colors hover:bg-overlay/5"
-            >
-              <span className="w-8 shrink-0 text-[10px] font-medium text-accent group-hover:text-orange-300">
-                {abbr}
-              </span>
-              <span className="min-w-0 text-left font-mono text-[11px] font-semibold tabular-nums text-accent group-hover:text-orange-300">
-                {display}
-              </span>
-            </li>
-          );
-        })}
-      </ul>
+      <div className="min-h-0 flex-1 p-2">
+        <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-lg shadow-black/20">
+          <ul className="grid min-h-0 flex-1 grid-cols-2 gap-x-1 overflow-y-auto p-1.5 content-start">
+            {BG_METRICS.map(({ abbr, full, getValue, format }) => {
+              const raw = getValue(metrics);
+              const display = format(raw);
+              return (
+                <li
+                  key={abbr}
+                  title={full}
+                  className="group flex items-baseline gap-1 px-1 py-1.5 transition-colors hover:bg-overlay/5"
+                >
+                  <span className="w-8 shrink-0 text-[10px] font-medium text-accent group-hover:text-orange-300">
+                    {abbr}
+                  </span>
+                  <span className="min-w-0 text-left font-mono text-[11px] font-semibold tabular-nums text-accent group-hover:text-orange-300">
+                    {display}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </div>
     </div>
   );
 }
