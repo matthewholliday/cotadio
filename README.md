@@ -2,6 +2,8 @@
 
 Real-time observability dashboard for Cursor agent activity. Project hooks stream telemetry from the IDE into a local Node.js API and React UI.
 
+> **Pre-release:** Only **Cursor on macOS** is supported so far. Windows, Linux, and other editors are not tested or supported yet.
+
 Available as a **web app** (browser) or **Electron desktop app** (open any Cursor project folder).
 
 **License:** [MIT](LICENSE)
