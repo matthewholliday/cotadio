@@ -23,6 +23,7 @@ logger.error = (msg, opts) => {
 
 export default defineConfig({
   customLogger: logger,
+  base: './',
   plugins: [react()],
   server: {
     port: 5173,

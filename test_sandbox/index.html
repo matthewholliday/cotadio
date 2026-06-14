@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SpiceFlow OS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <canvas id="water" aria-hidden="true"></canvas>
+  <div class="vignette" aria-hidden="true"></div>
+
+  <div class="os">
+    <header class="status-bar">
+      <div class="status-left">
+        <span class="quest-dot"></span>
+        <span id="clock">12:00</span>
+      </div>
+      <div class="status-center">SpiceFlow OS · v2.6.13</div>
+      <div class="status-right">
+        <span id="branch-label">main</span>
+        <span class="battery">●●●○</span>
+      </div>
+    </header>
+
+    <main class="stage">
+      <section class="panel search-panel" data-depth="0">
+        <div class="panel-glow"></div>
+        <h1 class="logo">
+          <span class="logo-spice">Spice</span><span class="logo-flow">Flow</span>
+        </h1>
+        <p class="tagline">Search the stream. Branch the dream. Tell us what you want.</p>
+
+        <form id="search-form" class="search-box" role="search">
+          <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/>
+            <path d="M16 16l5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <input
+            id="search-input"
+            type="search"
+            placeholder="Search commits, branches, or spice wisdom…"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button type="submit" class="search-btn">I'm feeling Spicey</button>
+        </form>
+
+        <div class="spice-filters" role="tablist" aria-label="Spice filter">
+          <button type="button" class="spice-tab active" data-spice="all" style="--spice:#fff">All</button>
+          <button type="button" class="spice-tab" data-spice="baby" style="--spice:#ffb7d5">Baby</button>
+          <button type="button" class="spice-tab" data-spice="scary" style="--spice:#ff4d6d">Scary</button>
+          <button type="button" class="spice-tab" data-spice="sporty" style="--spice:#7dffaf">Sporty</button>
+          <button type="button" class="spice-tab" data-spice="ginger" style="--spice:#ff9f43">Ginger</button>
+          <button type="button" class="spice-tab" data-spice="posh" style="--spice:#e8e8f0">Posh</button>
+        </div>
+      </section>
+
+      <section class="panel results-panel" data-depth="1">
+        <div class="panel-header">
+          <h2>Results</h2>
+          <span id="result-count" class="muted">0 found</span>
+        </div>
+        <ul id="results" class="results-list"></ul>
+      </section>
+
+      <section class="panel git-panel" data-depth="2">
+        <div class="panel-header">
+          <h2>Branch graph</h2>
+          <button type="button" id="checkout-btn" class="ghost-btn">Checkout</button>
+        </div>
+        <svg id="git-graph" class="git-graph" viewBox="0 0 320 420" aria-label="Git branch visualization"></svg>
+        <div id="commit-detail" class="commit-detail">
+          <p class="muted">Select a node to inspect the flow.</p>
+        </div>
+      </section>
+    </main>
+
+    <nav class="dock" aria-label="Quest launcher">
+      <button type="button" class="dock-item active" data-view="search" title="Search">
+        <span class="dock-icon">⌕</span>
+        <span class="dock-label">Search</span>
+      </button>
+      <button type="button" class="dock-item" data-view="git" title="Git">
+        <span class="dock-icon">⎇</span>
+        <span class="dock-label">Git</span>
+      </button>
+      <button type="button" class="dock-item" data-view="water" title="Calm">
+        <span class="dock-icon">≋</span>
+        <span class="dock-label">Flow</span>
+      </button>
+      <button type="button" class="dock-item" data-view="spice" title="Spice World">
+        <span class="dock-icon">★</span>
+        <span class="dock-label">Spice</span>
+      </button>
+    </nav>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -5,6 +5,7 @@ import { DensityToggle } from './Charts.jsx';
 export function ProjectBar({ project, onOpen, onSwitch, connected, highDensity, onHighDensityChange }) {
   const [recent, setRecent] = useState([]);
   const [hookStatus, setHookStatus] = useState(null);
+  const [installing, setInstalling] = useState(false);
   const isElectron = typeof window.dashboard !== 'undefined';
 
   useEffect(() => {
@@ -19,6 +20,22 @@ export function ProjectBar({ project, onOpen, onSwitch, connected, highDensity, 
     }
     window.dashboard.getHookStatus(project.path).then(setHookStatus);
   }, [isElectron, project?.path]);
+
+  const handleInstallHooks = async () => {
+    if (!project?.path || installing) return;
+    setInstalling(true);
+    try {
+      const result = await window.dashboard.setupHooks(project.path);
+      if (result?.status) {
+        setHookStatus(result.status);
+      } else {
+        const updated = await window.dashboard.getHookStatus(project.path);
+        setHookStatus(updated);
+      }
+    } finally {
+      setInstalling(false);
+    }
+  };
 
   if (!isElectron) return null;
 
@@ -81,6 +98,16 @@ export function ProjectBar({ project, onOpen, onSwitch, connected, highDensity, 
 
         <div className="flex items-center gap-3 text-sm">
           <DensityToggle checked={highDensity} onChange={onHighDensityChange} />
+          {project && (
+            <button
+              type="button"
+              onClick={handleInstallHooks}
+              disabled={installing}
+              className="rounded-md bg-accent/20 px-3 py-1.5 text-xs font-medium text-accent hover:bg-accent/30 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {installing ? 'Installing…' : hookStatus?.status === 'active' ? 'Reinstall hooks' : 'Install hooks'}
+            </button>
+          )}
           <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${hookBadge.className}`}>
             {hookBadge.label}
           </span>

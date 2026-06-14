@@ -1,17 +1,55 @@
 {
   "name": "agent-dashboard",
   "version": "1.0.0",
+  "description": "Real-time Cursor agent observability dashboard",
   "private": true,
   "type": "module",
+  "main": "electron/main.js",
   "scripts": {
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:web\"",
     "dev:server": "node server/index.js",
     "dev:web": "npm run dev --prefix web",
+    "start": "bash scripts/run-electron.sh",
+    "electron:dev": "concurrently -k \"npm run dev:server\" \"npm run dev:web\" \"npm run electron:launch\"",
+    "electron:launch": "wait-on http://localhost:5173 && ELECTRON_ENV=development electron .",
+    "electron:build": "npm run build && electron-builder",
     "seed": "node server/seed-demo.js",
     "simulate": "node server/simulate-live.js",
     "build": "npm run build --prefix web"
   },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.104.1",
+    "cors": "^2.8.5",
+    "dotenv": "^17.4.2",
+    "express": "^4.21.2",
+    "ws": "^8.18.0"
+  },
   "devDependencies": {
-    "concurrently": "^9.1.2"
+    "concurrently": "^9.1.2",
+    "electron": "^42.4.0",
+    "electron-builder": "^26.15.3",
+    "wait-on": "^9.0.10"
+  },
+  "build": {
+    "appId": "com.cursor.agent-dashboard",
+    "productName": "Agent Dashboard",
+    "asar": false,
+    "files": [
+      "electron/**",
+      "server/**",
+      "!server/node_modules/**",
+      "web/dist/**",
+      ".cursor/hooks/**"
+    ],
+    "mac": {
+      "target": ["dmg"],
+      "category": "public.app-category.developer-tools"
+    },
+    "win": {
+      "target": ["nsis"]
+    },
+    "linux": {
+      "target": ["AppImage"]
+    }
   }
 }

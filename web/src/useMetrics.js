@@ -29,6 +29,11 @@ function sendClientConfig(socket, { trendWindowMin }) {
 
 function getWebSocketUrl(projectId) {
   const qs = `?project=${encodeURIComponent(projectId)}`;
+  // In the packaged Electron app the page is served from a file:// URL, so
+  // window.location.host is empty. Connect directly to the local API server.
+  if (window.location.protocol === 'file:') {
+    return `ws://localhost:3847/ws${qs}`;
+  }
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   return `${protocol}//${window.location.host}/ws${qs}`;
 }
