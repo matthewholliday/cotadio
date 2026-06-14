@@ -4,13 +4,18 @@ export default {
   theme: {
     extend: {
       colors: {
-        panel: '#12141a',
-        surface: '#1a1d27',
-        border: '#2a2f3d',
-        accent: '#6366f1',
-        success: '#22c55e',
-        danger: '#ef4444',
-        warn: '#f59e0b',
+        bg: 'rgb(var(--bg) / <alpha-value>)',
+        panel: 'rgb(var(--panel) / <alpha-value>)',
+        surface: 'rgb(var(--surface) / <alpha-value>)',
+        border: 'rgb(var(--border) / <alpha-value>)',
+        accent: 'rgb(var(--accent) / <alpha-value>)',
+        fg: 'rgb(var(--fg) / <alpha-value>)',
+        'fg-soft': 'rgb(var(--fg-soft) / <alpha-value>)',
+        'fg-muted': 'rgb(var(--fg-muted) / <alpha-value>)',
+        success: 'rgb(var(--success) / <alpha-value>)',
+        danger: 'rgb(var(--danger) / <alpha-value>)',
+        warn: 'rgb(var(--warn) / <alpha-value>)',
+        overlay: 'rgb(var(--overlay) / <alpha-value>)',
       },
       fontFamily: {
         sans: ['IBM Plex Sans', 'system-ui', 'sans-serif'],

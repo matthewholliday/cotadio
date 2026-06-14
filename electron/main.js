@@ -169,8 +169,9 @@ async function startDashboardServer() {
 
 // Fixed windowed-mode dimensions (non-resizable baseline).
 const WINDOWED_WIDTH = 1400;
-const WINDOWED_HEIGHT_NORMAL = 900;
-const WINDOWED_HEIGHT_DENSE = 720;
+const FOOTER_HEIGHT = 23; // 10px text + py-1.5 (12px) + 1px border
+const WINDOWED_HEIGHT_NORMAL = 900 + FOOTER_HEIGHT;
+const WINDOWED_HEIGHT_DENSE = 720 + FOOTER_HEIGHT;
 
 async function createWindow() {
   mainWindow = new BrowserWindow({

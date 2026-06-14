@@ -10,8 +10,17 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
+    <!-- Prevent flash of wrong theme before React mounts -->
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('theme');
+          if (t === 'light') document.documentElement.classList.add('light');
+        } catch (e) {}
+      })();
+    </script>
   </head>
-  <body class="bg-[#0b0c10] text-slate-100 antialiased">
+  <body class="bg-bg text-fg antialiased">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

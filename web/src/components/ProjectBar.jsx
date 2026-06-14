@@ -62,8 +62,8 @@ function MenuModal({ onSettings, onOpenProject, onClose }) {
               <button
                 type="button"
                 onClick={onClick}
-                className={`flex w-full items-center gap-3 px-4 py-2.5 text-sm font-medium transition hover:bg-white/5 ${
-                  danger ? 'text-danger/80 hover:text-danger' : 'text-slate-200 hover:text-white'
+                className={`flex w-full items-center gap-3 px-4 py-2.5 text-sm font-medium transition hover:bg-overlay/5 ${
+                  danger ? 'text-danger/80 hover:text-danger' : 'text-fg-soft hover:text-fg'
                 }`}
               >
                 {icon}
@@ -112,8 +112,8 @@ function ProjectPickerModal({ project, recent, onOpen, onSwitch, onClose }) {
         {/* Current project */}
         {project && (
           <div className="border-b border-border px-4 py-3">
-            <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Current project</p>
-            <p className="mt-1 truncate text-sm font-medium text-white" title={project.path}>
+            <p className="text-xs font-medium uppercase tracking-wider text-fg-muted">Current project</p>
+            <p className="mt-1 truncate text-sm font-medium text-fg" title={project.path}>
               {project.path}
             </p>
           </div>
@@ -122,7 +122,7 @@ function ProjectPickerModal({ project, recent, onOpen, onSwitch, onClose }) {
         {/* Recent projects */}
         {recent.length > 0 && (
           <div className="flex flex-col">
-            <p className="px-4 pt-3 pb-1 text-xs font-medium uppercase tracking-wider text-slate-500">
+            <p className="px-4 pt-3 pb-1 text-xs font-medium uppercase tracking-wider text-fg-muted">
               Recent projects
             </p>
             <ul className="max-h-60 overflow-y-auto">
@@ -131,11 +131,11 @@ function ProjectPickerModal({ project, recent, onOpen, onSwitch, onClose }) {
                   <button
                     type="button"
                     onClick={() => handleSwitch(p.id)}
-                    className={`flex w-full flex-col items-start px-4 py-2.5 text-left transition hover:bg-white/5 ${
+                    className={`flex w-full flex-col items-start px-4 py-2.5 text-left transition hover:bg-overlay/5 ${
                       p.id === project?.id ? 'opacity-40 pointer-events-none' : ''
                     }`}
                   >
-                    <span className="truncate text-sm font-medium text-white" title={p.path}>
+                    <span className="truncate text-sm font-medium text-fg" title={p.path}>
                       {p.path}
                     </span>
                   </button>
@@ -206,7 +206,7 @@ export function ProjectBar({ project, onOpen, onSwitch, connected, onSettingsOpe
 
   const hookBadge = (() => {
     if (!project) {
-      return { label: 'No project', className: 'bg-slate-700 text-slate-300' };
+      return { label: 'No project', className: 'bg-border/50 text-fg-soft' };
     }
     if (hookStatus?.status === 'active') {
       return { label: 'Hooks active', className: 'bg-success/20 text-success' };
@@ -217,12 +217,12 @@ export function ProjectBar({ project, onOpen, onSwitch, connected, onSettingsOpe
     if (hookStatus?.status === 'missing') {
       return { label: 'Hooks missing', className: 'bg-danger/20 text-danger' };
     }
-    return { label: 'Checking hooks…', className: 'bg-slate-700 text-slate-300' };
+    return { label: 'Checking hooks…', className: 'bg-border/50 text-fg-soft' };
   })();
 
   return (
     <>
-      <div className={`window-drag border-b border-border bg-[#0f1117] ${isElectron && isMac ? 'pt-7' : ''}`}>
+      <div className={`window-drag border-b border-border bg-panel ${isElectron && isMac ? 'pt-7' : ''}`}>
         <div className="relative mx-auto flex max-w-[1600px] items-center justify-between gap-3 px-6 pt-3 pb-5">
 
           {/* Left: app title */}
@@ -238,11 +238,11 @@ export function ProjectBar({ project, onOpen, onSwitch, connected, onSettingsOpe
               type="button"
               onClick={() => setPickerOpen(true)}
               aria-haspopup="dialog"
-              className="window-no-drag pointer-events-auto group flex min-w-0 max-w-full items-center gap-1.5 rounded-md border border-accent/40 bg-accent/10 px-3 py-1.5 text-left shadow-[0_0_20px_rgba(99,102,241,0.15)] transition hover:border-accent/60 hover:bg-accent/20"
+              className="window-no-drag pointer-events-auto group flex min-w-0 max-w-full items-center gap-1.5 rounded-md border border-accent/40 bg-accent/10 px-3 py-1.5 text-left shadow-[0_0_20px_rgba(251,146,60,0.15)] transition hover:border-accent/60 hover:bg-accent/20"
             >
               {project ? (
                 <p
-                  className="min-w-0 truncate text-sm font-medium text-accent group-hover:text-indigo-300"
+                  className="min-w-0 truncate text-sm font-medium text-accent group-hover:text-fg"
                   title={project.path}
                 >
                   {project.path}
@@ -286,7 +286,7 @@ export function ProjectBar({ project, onOpen, onSwitch, connected, onSettingsOpe
               <span
                 className={`h-2 w-2 rounded-full ${connected ? 'bg-success animate-pulse' : 'bg-danger'}`}
               />
-              <span className="text-slate-400">{connected ? 'Live' : 'Reconnecting…'}</span>
+              <span className="text-fg-soft">{connected ? 'Live' : 'Reconnecting…'}</span>
             </div>
 
             <button
@@ -294,7 +294,7 @@ export function ProjectBar({ project, onOpen, onSwitch, connected, onSettingsOpe
               onClick={onToggleFullscreen}
               aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
               title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
-              className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-white/10 bg-white/5 text-slate-400 transition hover:border-white/20 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+              className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-overlay/10 bg-overlay/5 text-fg-muted transition hover:border-overlay/20 hover:bg-overlay/10 hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
             >
               {isFullscreen ? (
                 /* Compress / exit-fullscreen icon */
@@ -313,7 +313,7 @@ export function ProjectBar({ project, onOpen, onSwitch, connected, onSettingsOpe
               type="button"
               onClick={() => setMenuOpen(true)}
               aria-label="Open menu"
-              className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-white/10 bg-white/5 text-slate-400 transition hover:border-white/20 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+              className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-overlay/10 bg-overlay/5 text-fg-muted transition hover:border-overlay/20 hover:bg-overlay/10 hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
             >
               <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4" aria-hidden="true">
                 <path fillRule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 5A.75.75 0 012.75 9h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 9.75zm0 5a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75a.75.75 0 01-.75-.75z" clipRule="evenodd" />

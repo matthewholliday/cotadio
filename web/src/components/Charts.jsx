@@ -17,8 +17,7 @@ import {
   ZAxis,
 } from 'recharts';
 import { formatTime } from '../useMetrics.js';
-
-const COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ec4899', '#06b6d4', '#a78bfa'];
+import { useTheme, THEME_COLORS } from '../theme.js';
 
 const DensityContext = createContext(false);
 const ExpandedContext = createContext(false);
@@ -47,18 +46,18 @@ function useLayoutMode() {
   return 'normal';
 }
 
-function chartTick(dense) {
-  return { fill: '#94a3b8', fontSize: dense ? 8 : 10 };
+function chartTick(dense, color = '#94a3b8') {
+  return { fill: color, fontSize: dense ? 8 : 10 };
 }
 
 export function DensitySelect({ value, onChange, className = '' }) {
   return (
-    <label className={`flex cursor-pointer select-none items-center gap-2 text-sm text-slate-400 ${className}`}>
+    <label className={`flex cursor-pointer select-none items-center gap-2 text-sm text-fg-soft ${className}`}>
       <span className="shrink-0">Information Density</span>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="rounded-md border border-border bg-panel px-2 py-1 text-sm text-slate-200 focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/30"
+        className="rounded-md border border-border bg-panel px-2 py-1 text-sm text-fg focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/30"
       >
         <option value="low">Low Density</option>
         <option value="high">High Density</option>
@@ -88,7 +87,7 @@ function NoData({ className = '' }) {
   return (
     <div className={`flex flex-1 items-center justify-center ${minHeight} ${className}`}>
       <p
-        className={`text-slate-500 ${
+        className={`text-fg-muted ${
           mode === 'expanded' ? 'text-base' : mode === 'dense' ? 'text-xs' : 'text-sm'
         }`}
       >
@@ -125,7 +124,7 @@ function MetricTooltip({ text }) {
       <button
         type="button"
         aria-describedby={tooltipId}
-        className={`rounded-full text-slate-500 transition hover:bg-white/5 hover:text-slate-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 ${
+        className={`rounded-full text-fg-muted transition hover:bg-overlay/5 hover:text-fg-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 ${
           dense ? 'p-0.5' : 'p-1'
         }`}
       >
@@ -145,7 +144,7 @@ function MetricTooltip({ text }) {
       <span
         id={tooltipId}
         role="tooltip"
-        className={`pointer-events-none absolute right-0 top-full z-50 mt-1.5 w-64 rounded-lg border border-border bg-[#12141a] px-3 py-2 text-left font-normal normal-case tracking-normal text-slate-300 opacity-0 shadow-xl shadow-black/40 transition-opacity group-hover/info:opacity-100 group-focus-within/info:opacity-100 ${
+        className={`pointer-events-none absolute right-0 top-full z-50 mt-1.5 w-64 rounded-lg border border-border bg-panel px-3 py-2 text-left font-normal normal-case tracking-normal text-fg-soft opacity-0 shadow-xl shadow-black/40 transition-opacity group-hover/info:opacity-100 group-focus-within/info:opacity-100 ${
           dense ? 'text-[10px] leading-snug' : 'text-xs leading-relaxed'
         }`}
       >
@@ -195,7 +194,7 @@ export function Panel({
 
   return (
     <section
-      className={`group/panel flex h-full flex-col overflow-visible rounded-xl border border-border bg-surface shadow-lg shadow-black/20 ${
+      className={`group/panel flex ${collapsible ? 'h-auto' : 'h-full'} flex-col overflow-visible rounded-xl border border-border bg-surface shadow-lg shadow-black/20 ${
         dense ? 'p-1.5' : 'p-3'
       } ${className}`}
     >
@@ -205,7 +204,7 @@ export function Panel({
             <button
               type="button"
               aria-label="Drag to reorder"
-              className="mt-0.5 shrink-0 cursor-grab touch-none p-0.5 text-slate-600 opacity-0 transition-opacity hover:text-slate-400 group-hover/panel:opacity-100 active:cursor-grabbing"
+              className="mt-0.5 shrink-0 cursor-grab touch-none p-0.5 text-fg-muted opacity-0 transition-opacity hover:text-fg-soft group-hover/panel:opacity-100 active:cursor-grabbing"
               {...dragHandleProps}
             >
               <svg aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" className="h-4 w-4">
@@ -231,7 +230,7 @@ export function Panel({
                   aria-hidden="true"
                   viewBox="0 0 20 20"
                   fill="currentColor"
-                  className={`mt-0.5 h-4 w-4 shrink-0 text-slate-500 transition-transform duration-200 group-hover:text-slate-300 ${
+                  className={`mt-0.5 h-4 w-4 shrink-0 text-fg-muted transition-transform duration-200 group-hover:text-fg-soft ${
                     expanded ? 'rotate-90' : ''
                   }`}
                 >
@@ -243,26 +242,26 @@ export function Panel({
                 </svg>
                 <span className="min-w-0 flex-1">
                   <h2
-                    className={`font-semibold tracking-wide text-slate-100 group-hover:text-white ${
+                    className={`font-semibold tracking-wide text-fg group-hover:text-fg ${
                       dense ? 'text-xs leading-tight' : 'text-sm'
                     }`}
                   >
                     {title}
                   </h2>
-                  {subtitle && !dense && <p className="mt-0.5 text-xs text-slate-500">{subtitle}</p>}
+                  {subtitle && !dense && <p className="mt-0.5 text-xs text-fg-muted">{subtitle}</p>}
                 </span>
               </button>
             ) : (
               <div className="flex min-w-0 flex-1 items-start gap-2">
                 <span className="min-w-0 flex-1">
                   <h2
-                    className={`font-semibold tracking-wide text-slate-100 ${
+                    className={`font-semibold tracking-wide text-fg ${
                       dense ? 'text-xs leading-tight' : 'text-sm'
                     }`}
                   >
                     {title}
                   </h2>
-                  {subtitle && !dense && <p className="mt-0.5 text-xs text-slate-500">{subtitle}</p>}
+                  {subtitle && !dense && <p className="mt-0.5 text-xs text-fg-muted">{subtitle}</p>}
                 </span>
               </div>
             )}
@@ -275,7 +274,7 @@ export function Panel({
                   onExpand();
                 }}
                 aria-label={`Expand ${title}`}
-                className={`shrink-0 rounded-lg text-slate-500 transition hover:bg-white/5 hover:text-slate-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 ${
+                className={`shrink-0 rounded-lg text-fg-muted transition hover:bg-overlay/5 hover:text-fg-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 ${
                   dense ? 'p-0.5' : 'p-1'
                 }`}
               >
@@ -288,7 +287,13 @@ export function Panel({
       <div
         id={contentId}
         hidden={!expanded}
-        className={expanded ? 'flex min-h-0 flex-1 flex-col' : undefined}
+        className={
+          expanded
+            ? collapsible
+              ? 'flex flex-col'
+              : 'flex min-h-0 flex-1 flex-col'
+            : undefined
+        }
       >
         {children}
       </div>
@@ -298,14 +303,16 @@ export function Panel({
 
 export function AgentStateBarChart({ data }) {
   const dense = useDensity();
+  const theme = useTheme();
+  const tc = THEME_COLORS[theme];
   if (!data.length || !data.some((d) => d.value > 0)) {
     return <NoData />;
   }
-  const tick = chartTick(dense);
+  const tick = chartTick(dense, tc.textMuted);
   return (
     <ChartArea>
       <BarChart data={data} layout="vertical" margin={{ left: dense ? 4 : 8, right: dense ? 8 : 12 }}>
-        <CartesianGrid stroke="#2a2f3d" strokeDasharray="3 3" horizontal={false} />
+        <CartesianGrid stroke={tc.border} strokeDasharray="3 3" horizontal={false} />
         <XAxis type="number" tick={tick} allowDecimals={false} />
         <YAxis
           type="category"
@@ -315,18 +322,18 @@ export function AgentStateBarChart({ data }) {
         />
         <Tooltip
           contentStyle={{
-            background: '#1a1d27',
-            border: '1px solid #2a2f3d',
+            background: tc.surface,
+            border: `1px solid ${tc.border}`,
             borderRadius: 8,
-            color: '#f1f5f9',
+            color: tc.textPrimary,
           }}
-          labelStyle={{ color: '#f1f5f9' }}
-          itemStyle={{ color: '#e2e8f0' }}
+          labelStyle={{ color: tc.textPrimary }}
+          itemStyle={{ color: tc.textSecondary }}
           formatter={(value, name, props) => [`${value} (${props.payload.percent}%)`, name]}
         />
         <Bar dataKey="value" radius={[0, 4, 4, 0]}>
           {data.map((_, i) => (
-            <Cell key={i} fill={COLORS[i % COLORS.length]} />
+            <Cell key={i} fill={tc.colors[i % tc.colors.length]} />
           ))}
         </Bar>
       </BarChart>
@@ -336,6 +343,8 @@ export function AgentStateBarChart({ data }) {
 
 export function SecurityGauge({ rate, blocked, allowed }) {
   const mode = useLayoutMode();
+  const theme = useTheme();
+  const tc = THEME_COLORS[theme];
   if (blocked + allowed === 0) {
     return <NoData />;
   }
@@ -360,7 +369,7 @@ export function SecurityGauge({ rate, blocked, allowed }) {
               : 'h-36 w-36 border-8'
         }`}
         style={{
-          background: `conic-gradient(hsl(${hue} 70% 45%) ${clamped * 3.6}deg, #2a2f3d 0)`,
+          background: `conic-gradient(hsl(${hue} 70% 45%) ${clamped * 3.6}deg, ${tc.border} 0)`,
         }}
       >
         <div
@@ -369,14 +378,14 @@ export function SecurityGauge({ rate, blocked, allowed }) {
           }`}
         >
           <span
-            className={`font-bold tabular-nums ${
+            className={`font-bold tabular-nums text-fg ${
               mode === 'expanded' ? 'text-5xl' : mode === 'dense' ? 'text-lg' : 'text-3xl'
             }`}
           >
             {rate}%
           </span>
           {mode !== 'dense' && (
-            <span className={`text-slate-500 ${mode === 'expanded' ? 'text-sm' : 'text-xs'}`}>blocked</span>
+            <span className={`text-fg-muted ${mode === 'expanded' ? 'text-sm' : 'text-xs'}`}>blocked</span>
           )}
         </div>
       </div>
@@ -402,7 +411,7 @@ function TrendArrow({ direction, positive = 'up', mode = 'normal' }) {
   const size =
     mode === 'expanded' ? 'text-6xl' : mode === 'dense' ? 'text-xl' : 'text-4xl';
   if (direction === 'flat') {
-    return <span className={`${size} leading-none text-slate-500`}>→</span>;
+    return <span className={`${size} leading-none text-fg-muted`}>→</span>;
   }
 
   const isPositive = direction === positive;
@@ -426,7 +435,7 @@ function TrendStat({ value, unit, direction, positive = 'up', footer }) {
     >
       <div className={`flex items-center ${mode === 'expanded' ? 'gap-6' : mode === 'dense' ? 'gap-2' : 'gap-4'}`}>
         <span
-          className={`font-bold tabular-nums text-slate-100 ${
+          className={`font-bold tabular-nums text-fg ${
             mode === 'expanded' ? 'text-7xl' : mode === 'dense' ? 'text-2xl' : 'text-5xl'
           }`}
         >
@@ -436,7 +445,7 @@ function TrendStat({ value, unit, direction, positive = 'up', footer }) {
       </div>
       {unit && (
         <span
-          className={`text-slate-500 ${
+          className={`text-fg-muted ${
             mode === 'expanded' ? 'text-lg' : mode === 'dense' ? 'text-[10px]' : 'text-sm'
           }`}
         >
@@ -486,7 +495,7 @@ export function ThinkTimeGauge({ avgSec, count, direction, windowMinutes = 0.5 }
       unit={`avg seconds (${formatTrendWindowLabel(windowMinutes)})`}
       direction={direction}
       positive="down"
-      footer={<span className="text-slate-400">● {count} reasoning cycles</span>}
+      footer={<span className="text-fg-soft">● {count} reasoning cycles</span>}
     />
   );
 }
@@ -513,21 +522,23 @@ export function CodeChurnGauge({ added, removed, net, direction, total, windowMi
 
 export function ThinkTimeLine({ data }) {
   const dense = useDensity();
+  const theme = useTheme();
+  const tc = THEME_COLORS[theme];
   if (!data.length || !data.some((d) => d.count > 0)) {
     return <NoData />;
   }
   const chartData = data.map((d) => ({ ...d, label: formatTime(d.time) }));
-  const tick = chartTick(dense);
+  const tick = chartTick(dense, tc.textMuted);
   return (
     <ChartArea>
       <LineChart data={chartData}>
-        <CartesianGrid stroke="#2a2f3d" strokeDasharray="3 3" />
+        <CartesianGrid stroke={tc.border} strokeDasharray="3 3" />
         <XAxis dataKey="label" tick={tick} />
         <YAxis tick={tick} unit="s" width={dense ? 28 : undefined} />
         <Tooltip
-          contentStyle={{ background: '#1a1d27', border: '1px solid #2a2f3d', borderRadius: 8 }}
+          contentStyle={{ background: tc.surface, border: `1px solid ${tc.border}`, borderRadius: 8 }}
         />
-        <Line type="monotone" dataKey="avgThinkSec" stroke="#6366f1" strokeWidth={2} dot={chartData.length === 1 ? { r: 3, fill: '#6366f1' } : false} />
+        <Line type="monotone" dataKey="avgThinkSec" stroke={tc.accent} strokeWidth={2} dot={chartData.length === 1 ? { r: 3, fill: tc.accent } : false} />
       </LineChart>
     </ChartArea>
   );
@@ -535,22 +546,24 @@ export function ThinkTimeLine({ data }) {
 
 export function ShellOutcomeArea({ data }) {
   const dense = useDensity();
+  const theme = useTheme();
+  const tc = THEME_COLORS[theme];
   if (!data.length || !data.some((d) => d.success + d.failure > 0)) {
     return <NoData />;
   }
   const chartData = data.map((d) => ({ ...d, label: formatTime(d.time) }));
-  const tick = chartTick(dense);
+  const tick = chartTick(dense, tc.textMuted);
   return (
     <ChartArea>
       <AreaChart data={chartData}>
-        <CartesianGrid stroke="#2a2f3d" strokeDasharray="3 3" />
+        <CartesianGrid stroke={tc.border} strokeDasharray="3 3" />
         <XAxis dataKey="label" tick={tick} />
         <YAxis tick={tick} allowDecimals={false} width={dense ? 28 : undefined} />
         <Tooltip
-          contentStyle={{ background: '#1a1d27', border: '1px solid #2a2f3d', borderRadius: 8 }}
+          contentStyle={{ background: tc.surface, border: `1px solid ${tc.border}`, borderRadius: 8 }}
         />
-        <Area type="monotone" dataKey="success" stackId="1" stroke="#22c55e" fill="#22c55e55" />
-        <Area type="monotone" dataKey="failure" stackId="1" stroke="#ef4444" fill="#ef444455" />
+        <Area type="monotone" dataKey="success" stackId="1" stroke={tc.success} fill={`${tc.success}55`} />
+        <Area type="monotone" dataKey="failure" stackId="1" stroke={tc.danger} fill={`${tc.danger}55`} />
       </AreaChart>
     </ChartArea>
   );
@@ -558,6 +571,8 @@ export function ShellOutcomeArea({ data }) {
 
 export function BlastRadiusTreemap({ data }) {
   const mode = useLayoutMode();
+  const theme = useTheme();
+  const tc = THEME_COLORS[theme];
   if (!data.length) {
     return <NoData />;
   }
@@ -579,6 +594,7 @@ export function BlastRadiusTreemap({ data }) {
       >
         {data.map((item) => {
           const intensity = 0.25 + (item.value / max) * 0.75;
+          const [r, g, b] = tc.accent.slice(1).match(/.{2}/g).map((h) => parseInt(h, 16));
           return (
             <div
               key={item.name}
@@ -589,10 +605,10 @@ export function BlastRadiusTreemap({ data }) {
                     ? 'px-2 py-1.5'
                     : 'px-3 py-2.5'
               }`}
-              style={{ background: `rgba(99, 102, 241, ${intensity * 0.35})` }}
+              style={{ background: `rgba(${r}, ${g}, ${b}, ${intensity * 0.25})` }}
             >
               <p
-                className={`min-w-0 flex-1 truncate font-mono text-slate-300 ${
+                className={`min-w-0 flex-1 truncate font-mono text-fg-soft ${
                   mode === 'expanded' ? 'text-sm' : mode === 'dense' ? 'text-[10px]' : 'text-xs'
                 }`}
                 title={item.name}
@@ -601,14 +617,14 @@ export function BlastRadiusTreemap({ data }) {
               </p>
               <div className={`shrink-0 text-right ${mode === 'expanded' ? 'ml-4' : mode === 'dense' ? 'ml-2' : 'ml-3'}`}>
                 <p
-                  className={`font-semibold tabular-nums ${
+                  className={`font-semibold tabular-nums text-fg ${
                     mode === 'expanded' ? 'text-2xl' : mode === 'dense' ? 'text-sm' : 'text-lg'
                   }`}
                 >
                   {item.value}
                 </p>
                 {mode !== 'dense' && (
-                  <p className={`text-slate-500 ${mode === 'expanded' ? 'text-xs' : 'text-[10px]'}`}>edits</p>
+                  <p className={`text-fg-muted ${mode === 'expanded' ? 'text-xs' : 'text-[10px]'}`}>edits</p>
                 )}
               </div>
             </div>
@@ -621,14 +637,16 @@ export function BlastRadiusTreemap({ data }) {
 
 export function McpBarChart({ data }) {
   const dense = useDensity();
+  const theme = useTheme();
+  const tc = THEME_COLORS[theme];
   if (!data.length) {
     return <NoData />;
   }
-  const tick = chartTick(dense);
+  const tick = chartTick(dense, tc.textMuted);
   return (
     <ChartArea>
       <BarChart data={data} layout="vertical" margin={{ left: dense ? 8 : 20 }}>
-        <CartesianGrid stroke="#2a2f3d" strokeDasharray="3 3" horizontal={false} />
+        <CartesianGrid stroke={tc.border} strokeDasharray="3 3" horizontal={false} />
         <XAxis type="number" tick={tick} allowDecimals={false} />
         <YAxis
           type="category"
@@ -637,9 +655,9 @@ export function McpBarChart({ data }) {
           tick={tick}
         />
         <Tooltip
-          contentStyle={{ background: '#1a1d27', border: '1px solid #2a2f3d', borderRadius: 8 }}
+          contentStyle={{ background: tc.surface, border: `1px solid ${tc.border}`, borderRadius: 8 }}
         />
-        <Bar dataKey="count" fill="#06b6d4" radius={[0, 4, 4, 0]} />
+        <Bar dataKey="count" fill={tc.colors[4]} radius={[0, 4, 4, 0]} />
       </BarChart>
     </ChartArea>
   );
@@ -691,7 +709,7 @@ export function Events({ events = [] }) {
   if (!events.length) {
     return (
       <div className={`rounded-lg border border-border bg-panel ${padding} ${height} flex items-center`}>
-        <p className={`${textSize} text-slate-500`}>No hook events in the last hour</p>
+        <p className={`${textSize} text-fg-muted`}>No hook events in the last hour</p>
       </div>
     );
   }
@@ -713,14 +731,14 @@ export function Events({ events = [] }) {
             className={`grid gap-x-3 font-mono ${textSize} leading-relaxed`}
             style={{ gridTemplateColumns: gridCols }}
           >
-            <span className="text-slate-600 tabular-nums">{time}</span>
+            <span className="text-fg-muted tabular-nums">{time}</span>
             <span className={style.color}>{style.symbol}</span>
             <span className={`${style.color} opacity-75 truncate`}>{event.hook_event}</span>
             <span className="text-red-400 font-semibold">
               {event.verdict ? 'DENY' : ''}
             </span>
-            <span className="text-slate-500 truncate">{model}</span>
-            <span className="text-slate-400 truncate min-w-0">{detail}</span>
+            <span className="text-fg-muted truncate">{model}</span>
+            <span className="text-fg-soft truncate min-w-0">{detail}</span>
           </div>
         );
       })}
@@ -730,23 +748,25 @@ export function Events({ events = [] }) {
 
 export function CodeChurnLine({ data }) {
   const dense = useDensity();
+  const theme = useTheme();
+  const tc = THEME_COLORS[theme];
   if (!data.length || !data.some((d) => d.added + d.removed > 0)) {
     return <NoData />;
   }
   const chartData = data.map((d) => ({ ...d, label: formatTime(d.time) }));
-  const tick = chartTick(dense);
+  const tick = chartTick(dense, tc.textMuted);
   return (
     <ChartArea>
       <LineChart data={chartData}>
-        <CartesianGrid stroke="#2a2f3d" strokeDasharray="3 3" />
+        <CartesianGrid stroke={tc.border} strokeDasharray="3 3" />
         <XAxis dataKey="label" tick={tick} />
         <YAxis tick={tick} width={dense ? 28 : undefined} />
         <Tooltip
-          contentStyle={{ background: '#1a1d27', border: '1px solid #2a2f3d', borderRadius: 8 }}
+          contentStyle={{ background: tc.surface, border: `1px solid ${tc.border}`, borderRadius: 8 }}
         />
-        <Line type="monotone" dataKey="added" stroke="#22c55e" strokeWidth={2} dot={chartData.length === 1 ? { r: 3, fill: '#22c55e' } : false} name="Added" />
-        <Line type="monotone" dataKey="removed" stroke="#ef4444" strokeWidth={2} dot={chartData.length === 1 ? { r: 3, fill: '#ef4444' } : false} name="Removed" />
-        <Line type="monotone" dataKey="net" stroke="#6366f1" strokeWidth={2} strokeDasharray="4 4" dot={chartData.length === 1 ? { r: 3, fill: '#6366f1' } : false} name="Net" />
+        <Line type="monotone" dataKey="added" stroke={tc.success} strokeWidth={2} dot={chartData.length === 1 ? { r: 3, fill: tc.success } : false} name="Added" />
+        <Line type="monotone" dataKey="removed" stroke={tc.danger} strokeWidth={2} dot={chartData.length === 1 ? { r: 3, fill: tc.danger } : false} name="Removed" />
+        <Line type="monotone" dataKey="net" stroke={tc.accent} strokeWidth={2} strokeDasharray="4 4" dot={chartData.length === 1 ? { r: 3, fill: tc.accent } : false} name="Net" />
       </LineChart>
     </ChartArea>
   );
@@ -754,14 +774,16 @@ export function CodeChurnLine({ data }) {
 
 export function SessionScatter({ data }) {
   const dense = useDensity();
+  const theme = useTheme();
+  const tc = THEME_COLORS[theme];
   if (!data.length) {
     return <NoData />;
   }
-  const tick = chartTick(dense);
+  const tick = chartTick(dense, tc.textMuted);
   return (
     <ChartArea>
       <ScatterChart>
-        <CartesianGrid stroke="#2a2f3d" strokeDasharray="3 3" />
+        <CartesianGrid stroke={tc.border} strokeDasharray="3 3" />
         <XAxis
           type="number"
           dataKey="timestamp"
@@ -780,10 +802,10 @@ export function SessionScatter({ data }) {
         />
         <ZAxis range={dense ? [30, 100] : [60, 200]} />
         <Tooltip
-          contentStyle={{ background: '#1a1d27', border: '1px solid #2a2f3d', borderRadius: 8 }}
+          contentStyle={{ background: tc.surface, border: `1px solid ${tc.border}`, borderRadius: 8 }}
           formatter={(val, name) => [name === 'Duration' ? `${val} min` : formatTime(val), name]}
         />
-        <Scatter data={data} fill="#a78bfa" />
+        <Scatter data={data} fill={tc.colors[5]} />
       </ScatterChart>
     </ChartArea>
   );
@@ -791,6 +813,8 @@ export function SessionScatter({ data }) {
 
 export function HumanInterventions({ data }) {
   const mode = useLayoutMode();
+  const theme = useTheme();
+  const tc = THEME_COLORS[theme];
   if (data.total === 0) {
     return <NoData />;
   }
@@ -811,7 +835,7 @@ export function HumanInterventions({ data }) {
           {data.total}
         </span>
         <span
-          className={`text-slate-500 ${
+          className={`text-fg-muted ${
             mode === 'expanded' ? 'text-lg' : mode === 'dense' ? 'text-[10px]' : 'text-sm'
           }`}
         >
@@ -821,13 +845,13 @@ export function HumanInterventions({ data }) {
       <div className="min-h-0 flex-1">
         <ResponsiveContainer width="100%" height={sparkHeight}>
           <BarChart data={spark}>
-            <Bar dataKey="count" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="count" fill={tc.warn} radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
       {data.recent.length > 0 && mode !== 'dense' && (
         <ul
-          className={`mt-2 shrink-0 space-y-1 overflow-hidden text-slate-400 ${
+          className={`mt-2 shrink-0 space-y-1 overflow-hidden text-fg-soft ${
             mode === 'expanded' ? 'max-h-48 text-sm' : 'max-h-16 text-xs'
           }`}
         >
@@ -895,24 +919,24 @@ const BG_METRICS = [
 
 export function BackgroundView({ metrics, connected, onOpenSettings }) {
   return (
-    <div className="flex h-screen flex-col bg-[#0b0c10]">
-      <div className="window-drag flex shrink-0 items-center justify-between border-b border-white/10 px-3 pb-2 pt-8">
+    <div className="flex h-screen flex-col bg-bg">
+      <div className="window-drag flex shrink-0 items-center justify-between border-b border-overlay/10 px-3 pb-2 pt-8">
         <span className="bg-gradient-to-r from-amber-300 via-orange-400 to-rose-400 bg-clip-text text-xs font-bold tracking-tight text-transparent">
           catadio
         </span>
         <div className="window-no-drag flex items-center gap-2">
           <span className="flex items-center gap-1.5">
             <span
-              className={`h-1.5 w-1.5 rounded-full ${connected ? 'animate-pulse bg-emerald-400' : 'bg-red-500'}`}
+              className={`h-1.5 w-1.5 rounded-full ${connected ? 'animate-pulse bg-success' : 'bg-danger'}`}
             />
-            <span className="text-[10px] text-slate-500">{connected ? 'live' : 'reconnecting'}</span>
+            <span className="text-[10px] text-fg-muted">{connected ? 'live' : 'reconnecting'}</span>
           </span>
           {onOpenSettings && (
             <button
               type="button"
               onClick={onOpenSettings}
               aria-label="Open settings"
-              className="flex h-5 w-5 items-center justify-center rounded text-slate-600 hover:bg-white/10 hover:text-slate-300"
+              className="flex h-5 w-5 items-center justify-center rounded text-fg-muted hover:bg-overlay/10 hover:text-fg-soft"
             >
               <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5" aria-hidden="true">
                 <path fillRule="evenodd" d="M7.84 1.804A1 1 0 018.82 1h2.36a1 1 0 01.98.804l.331 1.652a6.993 6.993 0 011.929 1.115l1.598-.54a1 1 0 011.186.447l1.18 2.044a1 1 0 01-.205 1.251l-1.267 1.113a7.047 7.047 0 010 2.228l1.267 1.113a1 1 0 01.205 1.251l-1.18 2.044a1 1 0 01-1.186.447l-1.598-.54a6.993 6.993 0 01-1.929 1.115l-.33 1.652a1 1 0 01-.98.804H8.82a1 1 0 01-.98-.804l-.331-1.652a6.993 6.993 0 01-1.929-1.115l-1.598.54a1 1 0 01-1.186-.447l-1.18-2.044a1 1 0 01.205-1.251l1.267-1.113a7.047 7.047 0 010-2.228L1.821 7.773a1 1 0 01-.205-1.251l1.18-2.044a1 1 0 011.186-.447l1.598.54A6.993 6.993 0 017.51 3.456l.33-1.652zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
@@ -921,7 +945,7 @@ export function BackgroundView({ metrics, connected, onOpenSettings }) {
           )}
         </div>
       </div>
-      <ul className="min-h-0 flex-1 divide-y divide-white/5 overflow-y-auto px-1 py-0.5">
+      <ul className="min-h-0 flex-1 divide-y divide-overlay/5 overflow-y-auto px-1 py-0.5">
         {BG_METRICS.map(({ abbr, full, getValue, format }) => {
           const raw = getValue(metrics);
           const display = format(raw);
@@ -929,12 +953,12 @@ export function BackgroundView({ metrics, connected, onOpenSettings }) {
             <li
               key={abbr}
               title={full}
-              className="group flex items-center justify-between px-2 py-2 transition-colors hover:bg-white/5"
+              className="group flex items-center justify-between px-2 py-2 transition-colors hover:bg-overlay/5"
             >
-              <span className="text-[11px] font-medium text-slate-500 group-hover:text-slate-300">
+              <span className="text-[11px] font-medium text-fg-muted group-hover:text-fg-soft">
                 {abbr}
               </span>
-              <span className="font-mono text-sm font-semibold tabular-nums text-slate-200">
+              <span className="font-mono text-sm font-semibold tabular-nums text-fg">
                 {display}
               </span>
             </li>

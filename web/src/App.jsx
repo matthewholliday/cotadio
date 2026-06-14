@@ -36,6 +36,7 @@ import {
   ExpandedProvider,
 } from './components/Charts.jsx';
 import { ProjectBar } from './components/ProjectBar.jsx';
+import { ThemeContext } from './theme.js';
 import { useMetrics } from './useMetrics.js';
 
 const DEFAULT_PANEL_ORDER = [
@@ -56,9 +57,13 @@ const DEFAULT_PANEL_ORDER = [
 const PANEL_ORDER_KEY = 'panel-order';
 const DENSITY_MODE_KEY = 'density-mode';
 const TREND_WINDOW_KEY = 'trend-window-minutes';
+const THEME_KEY = 'theme';
 
 const VALID_DENSITY_MODES = ['low', 'high', 'background'];
 const DEFAULT_TREND_WINDOW_MIN = 0.5;
+const FOOTER_HEIGHT = 23; // 10px text + py-1.5 (12px) + 1px border
+const WINDOW_HEIGHT_NORMAL = 900 + FOOTER_HEIGHT;
+const WINDOW_HEIGHT_DENSE = 720 + FOOTER_HEIGHT;
 
 const METRIC_TOOLTIPS = {
   'agent-state':
@@ -130,6 +135,23 @@ function saveTrendWindowMin(value) {
   }
 }
 
+function readTheme() {
+  try {
+    const stored = localStorage.getItem(THEME_KEY);
+    if (stored === 'light' || stored === 'dark') return stored;
+  } catch {
+    // Ignore storage errors
+  }
+  return 'dark';
+}
+
+function saveTheme(value) {
+  try {
+    localStorage.setItem(THEME_KEY, value);
+  } catch {
+    // Ignore storage errors
+  }
+}
 
 function migratePanelOrder(stored) {
   if (!Array.isArray(stored)) return DEFAULT_PANEL_ORDER;
@@ -206,17 +228,17 @@ function ExpandedPanelModal({ title, subtitle, tooltip, onClose, children }) {
       >
         <div className="flex shrink-0 items-start justify-between gap-4 border-b border-border px-6 py-4">
           <div className="min-w-0">
-            <h2 id="expanded-panel-title" className="text-lg font-semibold text-white">
+            <h2 id="expanded-panel-title" className="text-lg font-semibold text-fg">
               {title}
             </h2>
-            {subtitle && <p className="mt-0.5 text-sm text-slate-500">{subtitle}</p>}
-            {tooltip && <p className="mt-2 text-xs leading-relaxed text-slate-400">{tooltip}</p>}
+            {subtitle && <p className="mt-0.5 text-sm text-fg-muted">{subtitle}</p>}
+            {tooltip && <p className="mt-2 text-xs leading-relaxed text-fg-soft">{tooltip}</p>}
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close expanded panel"
-            className="shrink-0 rounded-lg p-1 text-slate-500 hover:bg-white/5 hover:text-slate-300"
+            className="shrink-0 rounded-lg p-1 text-fg-muted hover:bg-overlay/5 hover:text-fg-soft"
           >
             <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5" aria-hidden="true">
               <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
@@ -229,18 +251,30 @@ function ExpandedPanelModal({ title, subtitle, tooltip, onClose, children }) {
   );
 }
 
+function AppFooter() {
+  return (
+    <footer
+      className="shrink-0 flex-none border-t border-border/50 bg-panel/25 px-4 py-1.5 text-center shadow-[inset_0_1px_0_0_rgb(var(--overlay)/0.04)]"
+    >
+      <p className="text-[10px] leading-none tracking-wide text-fg-muted/75">
+        © {new Date().getFullYear()} Code Manufactory LLC
+      </p>
+    </footer>
+  );
+}
+
 function SettingsInfoTooltip({ text }) {
   return (
     <div className="group relative inline-flex items-center">
       <svg
         viewBox="0 0 16 16"
         fill="currentColor"
-        className="h-3.5 w-3.5 cursor-default text-slate-600 group-hover:text-slate-400"
+        className="h-3.5 w-3.5 cursor-default text-fg-muted group-hover:text-fg-soft"
         aria-hidden="true"
       >
         <path fillRule="evenodd" d="M8 15A7 7 0 108 1a7 7 0 000 14zm0-10.5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 018 4.5zm0-1.25a.875.875 0 100-1.75.875.875 0 000 1.75z" clipRule="evenodd" />
       </svg>
-      <div className="pointer-events-none invisible absolute bottom-full left-1/2 z-10 mb-2 w-56 -translate-x-1/2 rounded-lg border border-border bg-panel px-3 py-2 text-xs leading-relaxed text-slate-400 shadow-xl group-hover:visible">
+      <div className="pointer-events-none invisible absolute bottom-full left-1/2 z-10 mb-2 w-56 -translate-x-1/2 rounded-lg border border-border bg-panel px-3 py-2 text-xs leading-relaxed text-fg-soft shadow-xl group-hover:visible">
         {text}
         <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-border" />
       </div>
@@ -255,6 +289,8 @@ function SettingsModal({
   onDensityModeChange,
   trendWindowMin,
   onTrendWindowMinChange,
+  theme,
+  onThemeChange,
 }) {
   useEffect(() => {
     const handleKey = (e) => { if (e.key === 'Escape') onClose(); };
@@ -268,16 +304,16 @@ function SettingsModal({
       onClick={onClose}
     >
       <div
-        className="flex max-h-[min(400px,85vh)] w-full max-w-sm flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-2xl"
+        className="flex max-h-[min(480px,85vh)] w-full max-w-sm flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex shrink-0 items-center justify-between border-b border-border px-5 py-3">
-          <h2 className="text-base font-semibold text-white">Settings</h2>
+          <h2 className="text-base font-semibold text-fg">Settings</h2>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close settings"
-            className="rounded-lg p-1 text-slate-500 hover:bg-white/5 hover:text-slate-300"
+            className="rounded-lg p-1 text-fg-muted hover:bg-overlay/5 hover:text-fg-soft"
           >
             <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4" aria-hidden="true">
               <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
@@ -287,20 +323,54 @@ function SettingsModal({
 
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-3">
           <div className="space-y-2">
+            {/* Appearance */}
             <div className="rounded-lg border border-border p-3">
               <div className="mb-2 flex items-center gap-1.5">
-                <h3 className="text-sm font-medium text-slate-200">Display</h3>
+                <h3 className="text-sm font-medium text-fg-soft">Appearance</h3>
+                <SettingsInfoTooltip text="Switch between dark and light color schemes. Your preference is saved and applied on next load." />
+              </div>
+              <div className="flex gap-1 rounded-lg border border-border p-0.5">
+                <button
+                  type="button"
+                  onClick={() => onThemeChange('dark')}
+                  className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition ${
+                    theme === 'dark'
+                      ? 'bg-accent/20 text-accent'
+                      : 'text-fg-muted hover:text-fg-soft'
+                  }`}
+                >
+                  Dark
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onThemeChange('light')}
+                  className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition ${
+                    theme === 'light'
+                      ? 'bg-accent/20 text-accent'
+                      : 'text-fg-muted hover:text-fg-soft'
+                  }`}
+                >
+                  Light
+                </button>
+              </div>
+            </div>
+
+            {/* Display */}
+            <div className="rounded-lg border border-border p-3">
+              <div className="mb-2 flex items-center gap-1.5">
+                <h3 className="text-sm font-medium text-fg-soft">Display</h3>
                 <SettingsInfoTooltip text="Choose how much information is shown. High Density packs more panels on screen; Background reduces to a compact floating readout." />
               </div>
               <DensitySelect value={densityMode} onChange={onDensityModeChange} />
             </div>
 
+            {/* Trend panels */}
             <div className="rounded-lg border border-border p-3">
               <div className="mb-2 flex items-center gap-1.5">
-                <h3 className="text-sm font-medium text-slate-200">Trend panels</h3>
+                <h3 className="text-sm font-medium text-fg-soft">Trend panels</h3>
                 <SettingsInfoTooltip text="How far back the think time, shell outcome, and code churn trend gauges look when computing values and direction arrows." />
               </div>
-              <label className="flex items-center gap-2 text-sm text-slate-300">
+              <label className="flex items-center gap-2 text-sm text-fg-soft">
                 <span className="shrink-0">Last</span>
                 <input
                   type="number"
@@ -314,15 +384,16 @@ function SettingsModal({
                       onTrendWindowMinChange(Math.min(parsed, 60));
                     }
                   }}
-                  className="w-24 rounded-md border border-border bg-panel px-2 py-1 text-sm text-slate-100 focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/30"
+                  className="w-24 rounded-md border border-border bg-panel px-2 py-1 text-sm text-fg focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/30"
                 />
-                <span className="text-slate-500">minutes</span>
+                <span className="text-fg-muted">minutes</span>
               </label>
             </div>
 
+            {/* Layout */}
             <div className="rounded-lg border border-border p-3">
               <div className="mb-2 flex items-center gap-1.5">
-                <h3 className="text-sm font-medium text-slate-200">Layout</h3>
+                <h3 className="text-sm font-medium text-fg-soft">Layout</h3>
                 <SettingsInfoTooltip text="Resets the panel order to the original default arrangement." />
               </div>
               <button
@@ -348,6 +419,7 @@ export default function App() {
   const [densityMode, setDensityMode] = useState(readDensityMode);
   const [trendWindowMin, setTrendWindowMin] = useState(readTrendWindowMin);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [theme, setTheme] = useState(readTheme);
 
   const highDensity = densityMode === 'high';
   const isBackground = densityMode === 'background';
@@ -355,6 +427,16 @@ export default function App() {
   const isElectron = typeof window.dashboard !== 'undefined';
   const projectId = isElectron ? (project?.id ?? null) : 'default';
   const { metrics, connected } = useMetrics(projectId, trendWindowMin);
+
+  useEffect(() => {
+    const html = document.documentElement;
+    if (theme === 'light') {
+      html.classList.add('light');
+    } else {
+      html.classList.remove('light');
+    }
+    saveTheme(theme);
+  }, [theme]);
 
   // Resize the Electron window when entering/leaving background mode.
   useEffect(() => {
@@ -366,7 +448,7 @@ export default function App() {
   // dead space at the bottom of the non-resizable window.
   useEffect(() => {
     if (!isElectron || isBackground || isFullscreen) return;
-    const height = densityMode === 'high' ? 720 : 900;
+    const height = densityMode === 'high' ? WINDOW_HEIGHT_DENSE : WINDOW_HEIGHT_NORMAL;
     window.dashboard.setWindowedHeight(height);
   }, [isElectron, isBackground, isFullscreen, densityMode]);
 
@@ -434,6 +516,10 @@ export default function App() {
   const handleTrendWindowMinChange = useCallback((value) => {
     setTrendWindowMin(value);
     saveTrendWindowMin(value);
+  }, []);
+
+  const handleThemeChange = useCallback((value) => {
+    setTheme(value);
   }, []);
 
   const handleExpandPanel = useCallback((id) => {
@@ -548,149 +634,148 @@ export default function App() {
 
   const expandedPanel = expandedPanelId ? panels[expandedPanelId] : null;
 
+  const settingsModal = settingsOpen && (
+    <SettingsModal
+      onClose={() => setSettingsOpen(false)}
+      onResetLayout={handleResetLayout}
+      densityMode={densityMode}
+      onDensityModeChange={handleDensityModeChange}
+      trendWindowMin={trendWindowMin}
+      onTrendWindowMinChange={handleTrendWindowMinChange}
+      theme={theme}
+      onThemeChange={handleThemeChange}
+    />
+  );
+
   if (isBackground) {
     return (
-      <>
+      <ThemeContext.Provider value={theme}>
         <BackgroundView
           metrics={metrics}
           connected={connected}
           onOpenSettings={() => setSettingsOpen(true)}
         />
-        {settingsOpen && (
-          <SettingsModal
-            onClose={() => setSettingsOpen(false)}
-            onResetLayout={handleResetLayout}
-            densityMode={densityMode}
-            onDensityModeChange={handleDensityModeChange}
-            trendWindowMin={trendWindowMin}
-            onTrendWindowMinChange={handleTrendWindowMinChange}
-          />
-        )}
-      </>
+        {settingsModal}
+      </ThemeContext.Provider>
     );
   }
 
   return (
-    <DensityProvider dense={highDensity}>
-      <div className="min-h-screen bg-[#0b0c10]">
-      <ProjectBar
-        project={project}
-        onOpen={handleOpen}
-        onSwitch={handleSwitch}
-        connected={connected}
-        onSettingsOpen={() => setSettingsOpen(true)}
-        isFullscreen={isFullscreen}
-        onToggleFullscreen={handleToggleFullscreen}
-      />
+    <ThemeContext.Provider value={theme}>
+      <DensityProvider dense={highDensity}>
+        <div className="flex h-full min-h-0 flex-col overflow-hidden bg-bg">
+          <ProjectBar
+            project={project}
+            onOpen={handleOpen}
+            onSwitch={handleSwitch}
+            connected={connected}
+            onSettingsOpen={() => setSettingsOpen(true)}
+            isFullscreen={isFullscreen}
+            onToggleFullscreen={handleToggleFullscreen}
+          />
 
-      {!isElectron && (
-        <header className="sticky top-0 z-10 border-b border-border bg-panel/90 backdrop-blur">
-          <div className="relative mx-auto flex max-w-[1600px] items-center justify-between px-4 py-2">
-            <h1 className="bg-gradient-to-r from-amber-300 via-orange-400 to-rose-400 bg-clip-text text-xl font-bold tracking-tight text-transparent">
-              catadio
-            </h1>
-            <div className="flex items-center gap-4 text-sm">
-              <div className="hidden sm:block text-right">
-                <p className="text-slate-400">
-                  {metrics.totals.recentEvents} events / {metrics.totals.sessions} sessions (1h)
-                </p>
-                <p className="text-xs text-slate-600">{metrics.totals.events} total buffered</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <span
-                  className={`h-2 w-2 rounded-full ${connected ? 'bg-success animate-pulse' : 'bg-danger'}`}
-                />
-                <span className="text-slate-400">{connected ? 'Live' : 'Reconnecting…'}</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSettingsOpen(true)}
-                aria-label="Open settings"
-                className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-white/10 bg-white/5 text-slate-400 transition hover:border-white/20 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
-              >
-                <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4" aria-hidden="true">
-                  <path fillRule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 5A.75.75 0 012.75 9h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 9.75zm0 5a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75a.75.75 0 01-.75-.75z" clipRule="evenodd" />
-                </svg>
-              </button>
-            </div>
-          </div>
-        </header>
-      )}
-
-      <main className={`mx-auto max-w-[1600px] px-4 ${highDensity ? 'py-2' : 'py-4'}`}>
-        {showEmptyState ? (
-          <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
-            <h2 className="text-2xl font-semibold text-white">No project selected</h2>
-            <p className="mt-2 max-w-md text-slate-400">
-              Open a Cursor project folder to install dashboard hooks and start streaming agent
-              telemetry in real time.
-            </p>
-            <button
-              type="button"
-              onClick={handleOpen}
-              className="mt-6 rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent/90"
-            >
-              Open project folder
-            </button>
-          </div>
-        ) : (
-          <>
-            <Panel
-              title={panels.events.title}
-              subtitle={panels.events.subtitle}
-              tooltip={panels.events.tooltip}
-              collapsible
-              className={highDensity ? 'mb-1.5' : 'mb-3'}
-              onExpand={() => handleExpandPanel('events')}
-            >
-              {panels.events.render()}
-            </Panel>
-
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-              <SortableContext items={panelOrder} strategy={rectSortingStrategy}>
-                <div
-                  className={`grid grid-cols-1 items-stretch sm:grid-cols-2 ${
-                    highDensity
-                      ? 'gap-1.5 lg:grid-cols-4 xl:grid-cols-6'
-                      : 'gap-3 lg:grid-cols-3'
-                  }`}
-                >
-                  {panelOrder.map((id) => (
-                    <SortablePanel key={id} id={id}>
-                      {({ dragHandleProps }) => panelContent[id]?.(dragHandleProps)}
-                    </SortablePanel>
-                  ))}
+          {!isElectron && (
+            <header className="sticky top-0 z-10 border-b border-border bg-panel/90 backdrop-blur">
+              <div className="relative mx-auto flex max-w-[1600px] items-center justify-between px-4 py-2">
+                <h1 className="bg-gradient-to-r from-amber-300 via-orange-400 to-rose-400 bg-clip-text text-xl font-bold tracking-tight text-transparent">
+                  catadio
+                </h1>
+                <div className="flex items-center gap-4 text-sm">
+                  <div className="hidden sm:block text-right">
+                    <p className="text-fg-soft">
+                      {metrics.totals.recentEvents} events / {metrics.totals.sessions} sessions (1h)
+                    </p>
+                    <p className="text-xs text-fg-muted">{metrics.totals.events} total buffered</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`h-2 w-2 rounded-full ${connected ? 'bg-success animate-pulse' : 'bg-danger'}`}
+                    />
+                    <span className="text-fg-soft">{connected ? 'Live' : 'Reconnecting…'}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSettingsOpen(true)}
+                    aria-label="Open settings"
+                    className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-overlay/10 bg-overlay/5 text-fg-muted transition hover:border-overlay/20 hover:bg-overlay/10 hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+                  >
+                    <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4" aria-hidden="true">
+                      <path fillRule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 5A.75.75 0 012.75 9h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 9.75zm0 5a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75a.75.75 0 01-.75-.75z" clipRule="evenodd" />
+                    </svg>
+                  </button>
                 </div>
-              </SortableContext>
-            </DndContext>
-          </>
-        )}
-      </main>
+              </div>
+            </header>
+          )}
 
-      {expandedPanel && (
-        <ExpandedPanelModal
-          title={expandedPanel.title}
-          subtitle={expandedPanel.subtitle}
-          tooltip={expandedPanel.tooltip}
-          onClose={handleCloseExpandedPanel}
-        >
-          <ExpandedProvider expanded>
-            <DensityProvider dense={false}>{expandedPanel.render()}</DensityProvider>
-          </ExpandedProvider>
-        </ExpandedPanelModal>
-      )}
+          <main className={`mx-auto min-h-0 w-full max-w-[1600px] flex-1 overflow-auto px-4 ${highDensity ? 'py-2' : 'py-4'}`}>
+            {showEmptyState ? (
+              <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
+                <h2 className="text-2xl font-semibold text-fg">No project selected</h2>
+                <p className="mt-2 max-w-md text-fg-soft">
+                  Open a Cursor project folder to install dashboard hooks and start streaming agent
+                  telemetry in real time.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleOpen}
+                  className="mt-6 rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent/90"
+                >
+                  Open project folder
+                </button>
+              </div>
+            ) : (
+              <>
+                <Panel
+                  title={panels.events.title}
+                  subtitle={panels.events.subtitle}
+                  tooltip={panels.events.tooltip}
+                  collapsible
+                  className={highDensity ? 'mb-1.5' : 'mb-3'}
+                  onExpand={() => handleExpandPanel('events')}
+                >
+                  {panels.events.render()}
+                </Panel>
 
-      {settingsOpen && (
-        <SettingsModal
-          onClose={() => setSettingsOpen(false)}
-          onResetLayout={handleResetLayout}
-          densityMode={densityMode}
-          onDensityModeChange={handleDensityModeChange}
-          trendWindowMin={trendWindowMin}
-          onTrendWindowMinChange={handleTrendWindowMinChange}
-        />
-      )}
-      </div>
-    </DensityProvider>
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                  <SortableContext items={panelOrder} strategy={rectSortingStrategy}>
+                    <div
+                      className={`grid grid-cols-1 items-stretch sm:grid-cols-2 ${
+                        highDensity
+                          ? 'gap-1.5 lg:grid-cols-4 xl:grid-cols-6'
+                          : 'gap-3 lg:grid-cols-3'
+                      }`}
+                    >
+                      {panelOrder.map((id) => (
+                        <SortablePanel key={id} id={id}>
+                          {({ dragHandleProps }) => panelContent[id]?.(dragHandleProps)}
+                        </SortablePanel>
+                      ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
+              </>
+            )}
+          </main>
+
+          <AppFooter />
+
+          {expandedPanel && (
+            <ExpandedPanelModal
+              title={expandedPanel.title}
+              subtitle={expandedPanel.subtitle}
+              tooltip={expandedPanel.tooltip}
+              onClose={handleCloseExpandedPanel}
+            >
+              <ExpandedProvider expanded>
+                <DensityProvider dense={false}>{expandedPanel.render()}</DensityProvider>
+              </ExpandedProvider>
+            </ExpandedPanelModal>
+          )}
+
+          {settingsModal}
+        </div>
+      </DensityProvider>
+    </ThemeContext.Provider>
   );
 }
